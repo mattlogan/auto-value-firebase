@@ -1,0 +1,1040 @@
+package me.mattlogan.auto.value.firebase;
+
+import com.google.auto.value.processor.AutoValueProcessor;
+import com.google.testing.compile.JavaFileObjects;
+import java.util.Arrays;
+import javax.tools.JavaFileObject;
+import org.junit.Test;
+
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+
+public class AutoValueFirebaseExtensionTest {
+
+  private static final JavaFileObject INGREDIENT = JavaFileObjects.forSourceString("test.Ingredient",
+    "package test;\n"
+    + "\n"
+    + "import com.google.auto.value.AutoValue;\n"
+    + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+    + "\n"
+    + "@AutoValue @FirebaseValue\n"
+    + "public abstract class Ingredient {\n"
+    + "  public abstract int spiciness();\n"
+    + "}\n");
+
+  private static final JavaFileObject REVIEW = JavaFileObjects.forSourceString("test.Review",
+    "package test;\n"
+    + "\n"
+    + "import com.google.auto.value.AutoValue;\n"
+    + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+    + "\n"
+    + "@AutoValue @FirebaseValue\n"
+    + "public abstract class Review {\n"
+    + "  public abstract String description();\n"
+    + "  public abstract int rating();\n"
+    + "}\n");
+
+  private static final JavaFileObject EXCLUDE = JavaFileObjects.forSourceString("com.google.firebase.database.Exclude",
+    "package com.google.firebase.database;\n"
+    + "\n"
+    + "import java.lang.annotation.ElementType;\n"
+    + "import java.lang.annotation.Retention;\n"
+    + "import java.lang.annotation.RetentionPolicy;\n"
+    + "import java.lang.annotation.Target;\n"
+    + "\n"
+    + "@Retention(RetentionPolicy.RUNTIME)\n"
+    + "@Target({ElementType.METHOD, ElementType.FIELD})\n"
+    + "public @interface Exclude {\n"
+    + "}\n");
+
+  private static final JavaFileObject PROPERTY_NAME =
+    JavaFileObjects.forSourceString("com.google.firebase.database.PropertyName",
+      "package com.google.firebase.database;\n"
+      + "\n"
+      + "import java.lang.annotation.ElementType;\n"
+      + "import java.lang.annotation.Retention;\n"
+      + "import java.lang.annotation.RetentionPolicy;\n"
+      + "import java.lang.annotation.Target;\n"
+      + "\n"
+      + "@Retention(RetentionPolicy.RUNTIME)\n"
+      + "@Target({ElementType.METHOD, ElementType.FIELD})\n"
+      + "public @interface PropertyName {\n"
+      + "  String value();\n"
+      + "}\n");
+
+  private static final JavaFileObject IGNORE_EXTRA_PROPERTIES =
+    JavaFileObjects.forSourceString("com.google.firebase.database.IgnoreExtraProperties",
+      "package com.google.firebase.database;\n"
+      + "\n"
+      + "import java.lang.annotation.ElementType;\n"
+      + "import java.lang.annotation.Retention;\n"
+      + "import java.lang.annotation.RetentionPolicy;\n"
+      + "import java.lang.annotation.Target;\n"
+      + "\n"
+      + "@Retention(RetentionPolicy.RUNTIME)\n"
+      + "@Target({ElementType.TYPE})\n"
+      + "public @interface IgnoreExtraProperties {\n"
+      + "}\n");
+
+  private static final JavaFileObject THROW_ON_EXTRA_PROPERTIES =
+    JavaFileObjects.forSourceString("com.google.firebase.database.ThrowOnExtraProperties",
+      "package com.google.firebase.database;\n"
+      + "\n"
+      + "import java.lang.annotation.ElementType;\n"
+      + "import java.lang.annotation.Retention;\n"
+      + "import java.lang.annotation.RetentionPolicy;\n"
+      + "import java.lang.annotation.Target;\n"
+      + "\n"
+      + "@Retention(RetentionPolicy.RUNTIME)\n"
+      + "@Target({ElementType.TYPE})\n"
+      + "public @interface ThrowOnExtraProperties {\n"
+      + "}\n");
+
+  @Test
+  public void primitive() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Ingredient {\n"
+      + "  public abstract int spiciness();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
+      + "  AutoValue_Ingredient(int spiciness) {\n"
+      + "    super(spiciness);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Ingredient(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getSpiciness());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private int spiciness;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Ingredient ingredient) {\n"
+      + "      this.spiciness = ingredient.spiciness();\n"
+      + "    }\n"
+      + "    public int getSpiciness() {\n"
+      + "      return spiciness;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void boxedPrimitive() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Ingredient {\n"
+      + "  public abstract Integer spiciness();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.Integer;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
+      + "  AutoValue_Ingredient(Integer spiciness) {\n"
+      + "    super(spiciness);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Ingredient(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getSpiciness());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private Integer spiciness;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Ingredient ingredient) {\n"
+      + "      this.spiciness = ingredient.spiciness();\n"
+      + "    }\n"
+      + "    public Integer getSpiciness() {\n"
+      + "      return spiciness;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void string() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Review",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Review {\n"
+      + "  public abstract String description();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Review",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.String;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Review extends $AutoValue_Review {\n"
+      + "  AutoValue_Review(String description) {\n"
+      + "    super(description);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Review(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getDescription());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private String description;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Review review) {\n"
+      + "      this.description = review.description();\n"
+      + "    }\n"
+      + "    public String getDescription() {\n"
+      + "      return description;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void customObject() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Ingredient ingredient();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(Ingredient ingredient) {\n"
+      + "    super(ingredient);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getIngredient() == null ? null : new AutoValue_Ingredient(firebaseValue.getIngredient()));\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private AutoValue_Ingredient.FirebaseValue ingredient;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      this.ingredient = taco.ingredient() == null ? null : new AutoValue_Ingredient.FirebaseValue(taco.ingredient());\n"
+      + "    }\n"
+      + "    public AutoValue_Ingredient.FirebaseValue getIngredient() {\n"
+      + "      return ingredient;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}\n");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(INGREDIENT, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void boxedPrimitiveList() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.List;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract List<Integer> ingredients();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.Integer;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.List;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(List<Integer> ingredients) {\n"
+      + "    super(ingredients);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getIngredients());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private List<Integer> ingredients;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      this.ingredients = taco.ingredients();\n"
+      + "    }\n"
+      + "    public List<Integer> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void stringList() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.List;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract List<String> ingredients();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.String;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.List;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(List<String> ingredients) {\n"
+      + "    super(ingredients);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getIngredients());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private List<String> ingredients;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      this.ingredients = taco.ingredients();\n"
+      + "    }\n"
+      + "    public List<String> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void customObjectList() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.List;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract List<Ingredient> ingredients();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.ArrayList;\n"
+      + "import java.util.List;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(List<Ingredient> ingredients) {\n"
+      + "    super(ingredients);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      convertFirebaseIngredientsToAutoValueIngredients(firebaseValue.getIngredients()));\n"
+      + "  }\n"
+      + "\n"
+      + "  private static List<Ingredient> convertFirebaseIngredientsToAutoValueIngredients(List<AutoValue_Ingredient.FirebaseValue> ingredients) {\n"
+      + "    if (ingredients == null) return null;\n"
+      + "    List<Ingredient> list = new ArrayList<>();\n"
+      + "    for (AutoValue_Ingredient.FirebaseValue item : ingredients) {\n"
+      + "      list.add(new AutoValue_Ingredient(item));\n"
+      + "    }\n"
+      + "    return list;\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private List<AutoValue_Ingredient.FirebaseValue> ingredients;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      if (taco.ingredients() != null) {\n"
+      + "        this.ingredients = new ArrayList<>();\n"
+      + "        for (Ingredient item : taco.ingredients()) {\n"
+      + "          ingredients.add(new AutoValue_Ingredient.FirebaseValue(item));\n"
+      + "        }\n"
+      + "      }\n"
+      + "    }\n"
+      + "    public List<AutoValue_Ingredient.FirebaseValue> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}\n");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(INGREDIENT, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void boxedPrimitiveMap() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.Map;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Map<Integer, Integer> ingredients();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.Integer;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.Map;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(Map<Integer, Integer> ingredients) {\n"
+      + "    super(ingredients);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getIngredients());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private Map<Integer, Integer> ingredients;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      this.ingredients = taco.ingredients();\n"
+      + "    }\n"
+      + "    public Map<Integer, Integer> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void stringMap() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.Map;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Map<Integer, String> ingredients();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.Integer;\n"
+      + "import java.lang.String;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.Map;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(Map<Integer, String> ingredients) {\n"
+      + "    super(ingredients);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getIngredients());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private Map<Integer, String> ingredients;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      this.ingredients = taco.ingredients();\n"
+      + "    }\n"
+      + "    public Map<Integer, String> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void customObjectMap() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.Map;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Map<String, Ingredient> ingredients();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.String;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(Map<String, Ingredient> ingredients) {\n"
+      + "    super(ingredients);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      convertFirebaseIngredientsToAutoValueIngredients(firebaseValue.getIngredients()));\n"
+      + "  }\n"
+      + "\n"
+      + "  private static Map<String, Ingredient> convertFirebaseIngredientsToAutoValueIngredients(Map<String, AutoValue_Ingredient.FirebaseValue> ingredients) {\n"
+      + "    if (ingredients == null) return null;\n"
+      + "    Map<String, Ingredient> map = new HashMap<>();\n"
+      + "    for (Map.Entry<String, AutoValue_Ingredient.FirebaseValue> entry : ingredients.entrySet()) {\n"
+      + "      map.put(entry.getKey(), new AutoValue_Ingredient(entry.getValue()));\n"
+      + "    }\n"
+      + "    return map;\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private Map<String, AutoValue_Ingredient.FirebaseValue> ingredients;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      if (taco.ingredients() != null) {\n"
+      + "        this.ingredients = new HashMap<>();\n"
+      + "        for (Map.Entry<String, Ingredient> entry : taco.ingredients().entrySet()) {\n"
+      + "          ingredients.put(entry.getKey(), new AutoValue_Ingredient.FirebaseValue(entry.getValue()));\n"
+      + "        }\n"
+      + "      }\n"
+      + "    }\n"
+      + "    public Map<String, AutoValue_Ingredient.FirebaseValue> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}\n");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(INGREDIENT, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void multipleProperties() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.List;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract String name();\n"
+      + "  public abstract List<Ingredient> ingredients();\n"
+      + "  public abstract Review review();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n"
+      + "\n"
+      + "import java.lang.String;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.ArrayList;\n"
+      + "import java.util.List;\n"
+      + "\n"
+      + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
+      + "  AutoValue_Taco(String name, List<Ingredient> ingredients, Review review) {\n"
+      + "    super(name, ingredients, review);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Taco(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getName(),\n"
+      + "      convertFirebaseIngredientsToAutoValueIngredients(firebaseValue.getIngredients()),\n"
+      + "      firebaseValue.getReview() == null ? null : new AutoValue_Review(firebaseValue.getReview()));\n"
+      + "  }\n"
+      + "\n"
+      + "  private static List<Ingredient> convertFirebaseIngredientsToAutoValueIngredients(List<AutoValue_Ingredient.FirebaseValue> ingredients) {\n"
+      + "    if (ingredients == null) return null;\n"
+      + "    List<Ingredient> list = new ArrayList<>();\n"
+      + "    for (AutoValue_Ingredient.FirebaseValue item : ingredients) {\n"
+      + "      list.add(new AutoValue_Ingredient(item));\n"
+      + "    }\n"
+      + "    return list;\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private String name;\n"
+      + "    private List<AutoValue_Ingredient.FirebaseValue> ingredients;\n"
+      + "    private AutoValue_Review.FirebaseValue review;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Taco taco) {\n"
+      + "      this.name = taco.name();\n"
+      + "      if (taco.ingredients() != null) {\n"
+      + "        this.ingredients = new ArrayList<>();\n"
+      + "        for (Ingredient item : taco.ingredients()) {\n"
+      + "          ingredients.add(new AutoValue_Ingredient.FirebaseValue(item));\n"
+      + "        }\n"
+      + "      }\n"
+      + "      this.review = taco.review() == null ? null : new AutoValue_Review.FirebaseValue(taco.review());\n"
+      + "    }\n"
+      + "    public String getName() {\n"
+      + "      return name;\n"
+      + "    }\n"
+      + "    public List<AutoValue_Ingredient.FirebaseValue> getIngredients() {\n"
+      + "      return ingredients;\n"
+      + "    }\n"
+      + "    public AutoValue_Review.FirebaseValue getReview() {\n"
+      + "      return review;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}\n");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(INGREDIENT, REVIEW, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void excludeAnnotation() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import com.google.firebase.database.Exclude;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Ingredient {\n"
+      + "  @Exclude\n"
+      + "  public abstract int spiciness();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
+      + "  AutoValue_Ingredient(int spiciness) {\n"
+      + "    super(spiciness);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Ingredient(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getSpiciness());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private int spiciness;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Ingredient ingredient) {\n"
+      + "      this.spiciness = ingredient.spiciness();\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    public int getSpiciness() {\n"
+      + "      return spiciness;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(EXCLUDE, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void propertyNameAnnotation() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import com.google.firebase.database.PropertyName;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Ingredient {\n"
+      + "  @PropertyName(\"picante\")\n"
+      + "  public abstract int spiciness();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.firebase.database.PropertyName;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
+      + "  AutoValue_Ingredient(int spiciness) {\n"
+      + "    super(spiciness);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Ingredient(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getSpiciness());\n"
+      + "  }\n"
+      + "\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private int spiciness;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Ingredient ingredient) {\n"
+      + "      this.spiciness = ingredient.spiciness();\n"
+      + "    }\n"
+      + "    @PropertyName(\"picante\")\n"
+      + "    public int getSpiciness() {\n"
+      + "      return spiciness;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(PROPERTY_NAME, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void ignoreExtraPropertiesAnnotation() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import com.google.firebase.database.IgnoreExtraProperties;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue @IgnoreExtraProperties\n"
+      + "public abstract class Ingredient {\n"
+      + "  public abstract int spiciness();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.firebase.database.IgnoreExtraProperties;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
+      + "  AutoValue_Ingredient(int spiciness) {\n"
+      + "    super(spiciness);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Ingredient(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getSpiciness());\n"
+      + "  }\n"
+      + "\n"
+      + "  @IgnoreExtraProperties\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private int spiciness;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Ingredient ingredient) {\n"
+      + "      this.spiciness = ingredient.spiciness();\n"
+      + "    }\n"
+      + "    public int getSpiciness() {\n"
+      + "      return spiciness;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(IGNORE_EXTRA_PROPERTIES, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void throwOnExtraPropertiesAnnotation() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import com.google.firebase.database.ThrowOnExtraProperties;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue @ThrowOnExtraProperties\n"
+      + "public abstract class Ingredient {\n"
+      + "  public abstract int spiciness();\n"
+      + "}\n");
+
+    JavaFileObject expected = JavaFileObjects.forSourceString("test.AutoValue_Ingredient",
+      "package test;\n"
+      + "\n"
+      + "import com.google.firebase.database.ThrowOnExtraProperties;\n"
+      + "import java.lang.SuppressWarnings;\n"
+      + "\n"
+      + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
+      + "  AutoValue_Ingredient(int spiciness) {\n"
+      + "    super(spiciness);\n"
+      + "  }\n"
+      + "\n"
+      + "  AutoValue_Ingredient(FirebaseValue firebaseValue) {\n"
+      + "    super(\n"
+      + "      firebaseValue.getSpiciness());\n"
+      + "  }\n"
+      + "\n"
+      + "  @ThrowOnExtraProperties\n"
+      + "  static final class FirebaseValue {\n"
+      + "    private int spiciness;\n"
+      + "    @SuppressWarnings(\"unused\")\n"
+      + "    FirebaseValue() {\n"
+      + "    }\n"
+      + "    FirebaseValue(Ingredient ingredient) {\n"
+      + "      this.spiciness = ingredient.spiciness();\n"
+      + "    }\n"
+      + "    public int getSpiciness() {\n"
+      + "      return spiciness;\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(THROW_ON_EXTRA_PROPERTIES, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expected);
+  }
+
+  @Test
+  public void listOfParameterizedTypes() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.List;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract List<List<String>> ingredients();\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .failsToCompile();
+  }
+
+  @Test
+  public void mapWithNonPrimitiveKeyTypes() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.Map;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Map<Ingredient, Integer> ingredients();\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .failsToCompile();
+  }
+
+  @Test
+  public void mapWithParemeterizedValueTypes() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.List;\n"
+      + "import java.util.Map;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Map<Integer, List<Ingredient>> ingredients();\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .failsToCompile();
+  }
+
+  @Test
+  public void set() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.Set;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract Set<Ingredient> ingredients();\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .failsToCompile();
+  }
+
+  @Test
+  public void arrayList() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+      + "\n"
+      + "import com.google.auto.value.AutoValue;\n"
+      + "import java.util.ArrayList;\n"
+      + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+      + "\n"
+      + "@AutoValue @FirebaseValue\n"
+      + "public abstract class Taco {\n"
+      + "  public abstract ArrayList<Ingredient> ingredients();\n"
+      + "}\n");
+
+    assertAbout(javaSource())
+      .that(source)
+      .processedWith(new AutoValueProcessor())
+      .failsToCompile();
+  }
+}
