@@ -40,10 +40,13 @@ public abstract class Taco {
     return new AutoValue_Taco(name, ingredients, review);
   }
 
-  public static Taco fromDataSnapshot(DataSnapshot dataSnapshot) {
-    return new AutoValue_Taco(dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class));
+  // Create AutoValue_Taco instance from AutoValue_Taco.FirebaseValue instance
+  public static Taco create(DataSnapshot dataSnapshot) {
+    AutoValue_Taco.FirebaseValue taco = dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class);
+    return new AutoValue_Taco(taco);
   }
 
+  // Create AutoValue_Taco.FirebaseValue instance from AutoValue_Taco instance
   public Object toFirebaseValue() {
     return new AutoValue_Taco.FirebaseValue(this);
   }
@@ -58,7 +61,7 @@ public abstract class Taco {
 
 In addition to the empty constructor required by `Firebase Realtime Database`, the generated `FirebaseValue` class includes a constructor that takes your `AutoValue` class as an argument. Conversely, your `AutoValue` class now also includes a constructor that takes a `FirebaseValue` as its argument.
 
-The `fromDataSnapshot(DataSnapshot)` and `toFirebaseValue` methods aren't required, but this is how I'd recommend converting your `AutoValue` objects to and from their corresponding `FirebaseValue` objects.
+The `create(DataSnapshot)` and `toFirebaseValue` methods aren't required, but this is how I'd recommend converting your `AutoValue` objects to and from their corresponding `FirebaseValue` objects.
 
 ### Supported types
 
@@ -82,7 +85,15 @@ As a result, it's required that you **don't** prefix your getters with `get`.
 Download
 --------
 
-Coming soon.
+This extension should be included as an `apt` dependency (if you're using [android-apt]).
+
+The `@FirebaseValue` annotation is packaged separately, and should be included as a `provided` dependency.
+
+```groovy
+apt 'me.mattlogan.auto.value:auto-value-firebase:0.1.1'
+provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:0.1.1'
+```
+
 
 License
 -------
