@@ -1,7 +1,16 @@
 AutoValue: Firebase Extension
 ========
 
-`auto-value-firebase` is an [AutoValue] extension for generating value classes that are compatible with [Firebase Realtime Database].
+For value classes to be compatible with [Firebase Realtime Database], they must:
+
+- contain public "get"-prefixed accessors *or* public fields, and
+- contain an empty, or "default," constructor.
+
+If we want to use [AutoValue], the first requirement is achievable -- we can prefix getters with "get" -- though many among us may prefer to name our getters without the "get" prefix.
+
+The second requirement is impossible -- `AutoValue` simply doesn't generate default constructors.
+
+This library is an `AutoValue` extension for generating `Firebase Realtime Database` compatible value classes with easy conversions between your `AutoValue` and `FirebaseValue` instances.
 
 Usage
 -----
@@ -42,8 +51,7 @@ public abstract class Taco {
 
   // Create AutoValue_Taco instance from AutoValue_Taco.FirebaseValue instance
   public static Taco create(DataSnapshot dataSnapshot) {
-    AutoValue_Taco.FirebaseValue taco = dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class);
-    return new AutoValue_Taco(taco);
+    return new AutoValue_Taco(dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class));
   }
 
   // Create AutoValue_Taco.FirebaseValue instance from AutoValue_Taco instance
