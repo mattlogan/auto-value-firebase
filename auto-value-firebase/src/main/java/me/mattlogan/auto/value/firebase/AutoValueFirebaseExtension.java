@@ -78,7 +78,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                                             .addType(
                                               TypeSpec.classBuilder(FIREBASEVALUE)
                                                       .addModifiers(Modifier.STATIC, Modifier.FINAL)
-                                                      .addAnnotations(generateFirebaseClassAnnotations(autoValueTypeElement))
+                                                      .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
                                                       .addFields(generateFirebaseValueFields(packageName, types))
                                                       .addMethod(generateEmptyFirebaseValueConstructor())
                                                       .addMethod(generateFirebaseValueConstructorWithAutoValueParam(
@@ -119,7 +119,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  static List<AnnotationSpec> generateFirebaseClassAnnotations(TypeElement type) {
+  static List<AnnotationSpec> generateFirebaseValueClassAnnotations(TypeElement type) {
     List<AnnotationSpec> annotations = new ArrayList<>();
 
     for (AnnotationMirror annotation : type.getAnnotationMirrors()) {
@@ -274,7 +274,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                   .addModifiers(Modifier.PUBLIC)
                   .addCode("return " + fieldName + ";\n");
 
-      methodBuilder.addAnnotations(generateFirebaseMethodAnnotations(entry.getValue()));
+      methodBuilder.addAnnotations(generateFirebaseValueMethodAnnotations(entry.getValue()));
 
       if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         methodBuilder.returns(originalType);
@@ -317,7 +317,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return getters;
   }
 
-  static List<AnnotationSpec> generateFirebaseMethodAnnotations(ExecutableElement property) {
+  static List<AnnotationSpec> generateFirebaseValueMethodAnnotations(ExecutableElement property) {
     List<AnnotationSpec> annotations = new ArrayList<>();
 
     for (AnnotationMirror annotation : property.getAnnotationMirrors()) {
