@@ -68,7 +68,6 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       generateCollectionConverterMethods(context.packageName(), types);
 
     TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className)
-                                            .addModifiers(Modifier.FINAL)
                                             .superclass(TypeVariableName.get(classToExtend))
                                             .addMethod(generateStandardAutoValueConstructor(types))
                                             .addMethods(collectionConverterMethods.values())
