@@ -14,7 +14,6 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,36 +56,32 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
   }
 
   @Override
-  public String generateClass(Context context, String className, String classToExtend, boolean isFinal) {
+  public String generateClass(Context context, String classNameString, String classToExtend, boolean isFinal) {
     String packageName = context.packageName();
     TypeElement autoValueTypeElement = context.autoValueClass();
     Map<String, ExecutableElement> properties = context.properties();
     LinkedHashMap<String, TypeName> types = convertPropertiesToTypes(properties);
-    ClassName firebaseValueClassName = ClassName.get(context.packageName(), className, FIREBASEVALUE);
+    ClassName className = ClassName.get(packageName, classNameString);
 
-    Map<String, MethodSpec> collectionConverterMethods =
-      generateCollectionConverterMethods(context.packageName(), types);
+    TypeSpec firebaseValue = TypeSpec.classBuilder(FIREBASEVALUE)
+                                     .addModifiers(Modifier.STATIC, Modifier.FINAL)
+                                     .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
+                                     .addFields(generateFirebaseValueFields(packageName, types))
+                                     .addMethod(generateEmptyFirebaseValueConstructor())
+                                     .addMethod(generateFirebaseValueConstructorWithAutoValueParam(
+                                       packageName, autoValueTypeElement, types))
+                                     .addMethod(generateFirebaseValueToAutoValueMethod(
+                                       packageName, className, types))
+                                     .addMethods(generateFirebaseValueGetters(packageName, properties))
+                                     .build();
 
-    TypeSpec.Builder classBuilder = TypeSpec.classBuilder(className)
-                                            .superclass(TypeVariableName.get(classToExtend))
-                                            .addMethod(generateStandardAutoValueConstructor(types))
-                                            .addMethods(collectionConverterMethods.values())
-                                            .addMethod(generateAutoValueConstructorWithFirebaseValueParam(
-                                              types,
-                                              firebaseValueClassName,
-                                              collectionConverterMethods))
-                                            .addType(
-                                              TypeSpec.classBuilder(FIREBASEVALUE)
-                                                      .addModifiers(Modifier.STATIC, Modifier.FINAL)
-                                                      .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
-                                                      .addFields(generateFirebaseValueFields(packageName, types))
-                                                      .addMethod(generateEmptyFirebaseValueConstructor())
-                                                      .addMethod(generateFirebaseValueConstructorWithAutoValueParam(
-                                                        packageName, autoValueTypeElement, types))
-                                                      .addMethods(generateFirebaseValueGetters(packageName, properties))
-                                                      .build());
+    TypeSpec generatedClass = TypeSpec.classBuilder(className)
+                                      .superclass(TypeVariableName.get(classToExtend))
+                                      .addMethod(generateStandardAutoValueConstructor(types))
+                                      .addType(firebaseValue)
+                                      .build();
 
-    return JavaFile.builder(context.packageName(), classBuilder.build()).build().toString();
+    return JavaFile.builder(packageName, generatedClass).build().toString();
   }
 
   static LinkedHashMap<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
@@ -334,105 +329,72 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return annotations;
   }
 
-  static MethodSpec generateAutoValueConstructorWithFirebaseValueParam(LinkedHashMap<String, TypeName> types,
-                                                                       ClassName firebaseValueType,
-                                                                       Map<String, MethodSpec> converters) {
-    String paramName = "firebaseValue";
-    MethodSpec.Builder constructorBuilder =
-      MethodSpec.constructorBuilder()
-                .addParameter(firebaseValueType, paramName);
-    constructorBuilder.addCode("super(\n");
+  static MethodSpec generateFirebaseValueToAutoValueMethod(String packageName,
+                                                           ClassName autoValueClassName,
+                                                           LinkedHashMap<String, TypeName> types) {
+    ClassName finalAutoValueClassName = stripDollarSignsFromClassName(autoValueClassName);
+    MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("toAutoValue")
+                                                 .addAnnotation(EXCLUDE)
+                                                 .returns(finalAutoValueClassName);
 
-    int i = 0;
     for (Map.Entry<String, TypeName> entry : types.entrySet()) {
       String fieldName = entry.getKey();
       TypeName type = entry.getValue();
-      String getterName = fieldNameToGetterName(fieldName);
 
       if (typeIsPrimitive(type) || typeIsPrimitiveCollection(type)) {
-        constructorBuilder.addCode(
-          "  $L.$L()", paramName, getterName);
+        methodBuilder.addStatement("$T $L = this.$L", type, fieldName, fieldName);
 
       } else if (typeIsNonPrimitiveCollection(type)) {
-        constructorBuilder.addCode(
-          "  $L($L.$L())", converters.get(fieldName).name, paramName, getterName);
+        ParameterizedTypeName pType = (ParameterizedTypeName) type;
+
+        if (LIST.equals(pType.rawType)) {
+          ClassName outputParam = (ClassName) pType.typeArguments.get(0);
+          ClassName inputParam =
+            ClassName.get(packageName, AUTOVALUE_PREFIX + outputParam.simpleName() + "." + FIREBASEVALUE);
+
+          methodBuilder.addStatement("$T $L = null", type, fieldName)
+                       .beginControlFlow("if (this.$L != null)", fieldName)
+                       .addStatement("$L = new $T<>()", fieldName, ARRAY_LIST)
+                       .beginControlFlow("for ($T item : this.$L)", inputParam, fieldName)
+                       .addStatement("$L.add(item.toAutoValue())", fieldName)
+                       .endControlFlow()
+                       .endControlFlow();
+
+        } else if (MAP.equals(pType.rawType)) {
+          ClassName keyParam = (ClassName) pType.typeArguments.get(0);
+          ClassName outputParam = (ClassName) pType.typeArguments.get(1);
+          ClassName inputParam =
+            ClassName.get(packageName, AUTOVALUE_PREFIX + outputParam.simpleName() + "." + FIREBASEVALUE);
+
+          methodBuilder.addStatement("$T $L = null", type, fieldName)
+                       .beginControlFlow("if (this.$L != null)", fieldName)
+                       .addStatement("$L = new $T<>()", fieldName, HASH_MAP)
+                       .beginControlFlow("for ($T<$T, $T> entry : this.$L.entrySet())",
+                         MAP_ENTRY, keyParam, inputParam, fieldName)
+                       .addStatement("$L.put(entry.getKey(), entry.getValue().toAutoValue())",
+                         fieldName)
+                       .endControlFlow()
+                       .endControlFlow();
+        }
 
       } else {
-        constructorBuilder.addCode(
-          "  $L.$L() == null ? null : new AutoValue_$T($L.$L())",
-          paramName, getterName, type, paramName, getterName);
-
+        methodBuilder.addStatement("$T $L = this.$L == null ? null : this.$L.toAutoValue()",
+          type, fieldName, fieldName, fieldName);
       }
-      if (i < types.size() - 1) {
-        constructorBuilder.addCode(",\n");
-      }
-
-      i++;
-    }
-    constructorBuilder.addCode(");\n");
-
-    return constructorBuilder.build();
-  }
-
-  static Map<String, MethodSpec> generateCollectionConverterMethods(String packageName,
-                                                                    LinkedHashMap<String, TypeName> types) {
-    Map<String, MethodSpec> map = new HashMap<>();
-    for (Map.Entry<String, TypeName> entry : types.entrySet()) {
-      if (!typeIsNonPrimitiveCollection(entry.getValue())) {
-        continue;
-      }
-
-      String fieldName = entry.getKey();
-      ParameterizedTypeName returnType = (ParameterizedTypeName) entry.getValue();
-
-      MethodSpec.Builder methodBuilder =
-        MethodSpec.methodBuilder(fieldNameToConverterName(fieldName))
-                  .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-                  .returns(returnType);
-
-      if (LIST.equals(returnType.rawType)) {
-        ClassName outputParam = (ClassName) returnType.typeArguments.get(0);
-        ClassName inputParam =
-          ClassName.get(packageName, AUTOVALUE_PREFIX + outputParam.simpleName() + ".FirebaseValue");
-
-        // Add method parameter
-        methodBuilder.addParameter(
-          ParameterizedTypeName.get(returnType.rawType, inputParam), fieldName);
-
-        // Create method body
-        methodBuilder.addCode("if ($L == null) return null;\n", fieldName);
-        methodBuilder.addCode("$T list = new $T<>();\n", returnType, ARRAY_LIST);
-        methodBuilder.beginControlFlow("for ($T item : $L)", inputParam, fieldName)
-                     .addStatement("list.add(new $T(item))",
-                       ClassName.get(packageName, AUTOVALUE_PREFIX + outputParam.simpleName()))
-                     .endControlFlow();
-        methodBuilder.addStatement("return list");
-
-      } else if (MAP.equals(returnType.rawType)) {
-        ClassName keyParam = (ClassName) returnType.typeArguments.get(0);
-        ClassName outputParam = (ClassName) returnType.typeArguments.get(1);
-        ClassName inputParam =
-          ClassName.get(packageName, AUTOVALUE_PREFIX + outputParam.simpleName() + ".FirebaseValue");
-
-        // Add method parameter
-        methodBuilder.addParameter(
-          ParameterizedTypeName.get(returnType.rawType, keyParam, inputParam), fieldName);
-
-        // Create method body
-        methodBuilder.addCode("if ($L == null) return null;\n", fieldName);
-        methodBuilder.addCode("$T map = new $T<>();\n", returnType, HASH_MAP);
-        methodBuilder.beginControlFlow("for ($T<$T, $T> entry : $L.entrySet())",
-          MAP_ENTRY, keyParam, inputParam, fieldName)
-                     .addStatement("map.put(entry.getKey(), new $T(entry.getValue()))",
-                       ClassName.get(packageName, AUTOVALUE_PREFIX + outputParam.simpleName()))
-                     .endControlFlow();
-        methodBuilder.addStatement("return map");
-      }
-
-      map.put(fieldName, methodBuilder.build());
     }
 
-    return map;
+    methodBuilder.addCode("return new $T(", finalAutoValueClassName);
+    StringBuilder constructorArgsFormat = new StringBuilder();
+    for (int i = types.size(); i > 0; i--) {
+      constructorArgsFormat.append("$N");
+      if (i > 1) {
+        constructorArgsFormat.append(", ");
+      }
+    }
+    constructorArgsFormat.append(");\n");
+    methodBuilder.addCode(constructorArgsFormat.toString(), types.keySet().toArray());
+
+    return methodBuilder.build();
   }
 
   static boolean checkIfTypeIsSupported(TypeName type) {
@@ -502,12 +464,26 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
   }
 
-  static String fieldNameToConverterName(String fieldName) {
-    String fieldNameCapitalized = fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-    return "convertFirebase" + fieldNameCapitalized + "ToAutoValue" + fieldNameCapitalized;
-  }
-
   static RuntimeException unsupportedType(TypeName type, String message) {
     return new RuntimeException("Type is not supported: " + type + "\n" + message);
+  }
+
+  // Get the "final" class in the AutoValue chain, if multiple extensions
+  static ClassName stripDollarSignsFromClassName(ClassName className) {
+    String simpleName = className.simpleName();
+    if (!simpleName.startsWith("$")) {
+      return className;
+    }
+
+    int numDollarSigns = 0;
+    char dollarSign = "$".charAt(0);
+    for (int i = 0; i < simpleName.length(); i++) {
+      if (dollarSign == simpleName.charAt(i)) {
+        numDollarSigns++;
+      }
+    }
+
+    String strippedSimpleName = simpleName.substring(numDollarSigns);
+    return ClassName.get(className.packageName(), strippedSimpleName);
   }
 }
