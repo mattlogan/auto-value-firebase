@@ -12,8 +12,8 @@ public abstract class Taco {
     return new AutoValue_Taco(name, ingredients, review);
   }
 
-  public static Taco fromDataSnapshot(DataSnapshot dataSnapshot) {
-    return new AutoValue_Taco(dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class));
+  public static Taco create(DataSnapshot dataSnapshot) {
+    return dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class).toAutoValue();
   }
 
   public Object toFirebaseValue() {

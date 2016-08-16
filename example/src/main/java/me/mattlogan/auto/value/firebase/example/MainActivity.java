@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
     tacosEventListener = new ChildEventListener() {
       @Override public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-        Log.d("testing", "onChildAdded: " + Taco.fromDataSnapshot(dataSnapshot));
+        Log.d("testing", "onChildAdded: " + Taco.create(dataSnapshot));
       }
 
       @Override public void onChildChanged(DataSnapshot dataSnapshot, String s) {
