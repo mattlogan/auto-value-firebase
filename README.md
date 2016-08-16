@@ -17,7 +17,7 @@ Usage
 
 Just add `auto-value-firebase` to your project and add the `@FirebaseValue` annotation to your existing `@AutoValue` annotated classes.
 
-This extension creates `Firebase Realtime Database` compatible static inner classes, each named `FirebaseValue`, inside your generated `AutoValue` classes. From there, it's easy to convert your `AutoValue` object to a `FirebaseValue` object and vice versa via generated constructors.
+This extension creates `Firebase Realtime Database` compatible static inner classes, each named `FirebaseValue`, inside your generated `AutoValue` classes. From there, it's easy to convert your `AutoValue` object to a `FirebaseValue` object.
 
 ### Example
 
@@ -49,12 +49,10 @@ public abstract class Taco {
     return new AutoValue_Taco(name, ingredients, review);
   }
 
-  // Create AutoValue_Taco instance from AutoValue_Taco.FirebaseValue instance
   public static Taco create(DataSnapshot dataSnapshot) {
-    return new AutoValue_Taco(dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class));
+    return dataSnapshot.getValue(AutoValue_Taco.FirebaseValue.class).toAutoValue();
   }
 
-  // Create AutoValue_Taco.FirebaseValue instance from AutoValue_Taco instance
   public Object toFirebaseValue() {
     return new AutoValue_Taco.FirebaseValue(this);
   }
@@ -67,7 +65,7 @@ public abstract class Taco {
 }
 ```
 
-In addition to the empty constructor required by `Firebase Realtime Database`, the generated `FirebaseValue` class includes a constructor that takes your `AutoValue` class as an argument. Conversely, your `AutoValue` class now also includes a constructor that takes a `FirebaseValue` as its argument.
+In addition to the empty constructor required by `Firebase Realtime Database`, the generated `FirebaseValue` class includes a constructor that takes your `AutoValue` class as an argument. The generated `FirebaseValue` class also includes a `toAutoValue()` method to convert it back to the `AutoValue` instance.
 
 The `create(DataSnapshot)` and `toFirebaseValue` methods aren't required, but this is how I'd recommend converting your `AutoValue` objects to and from their corresponding `FirebaseValue` objects.
 
@@ -98,8 +96,8 @@ This extension should be included as an `apt` dependency (if you're using [andro
 The `@FirebaseValue` annotation is packaged separately, and should be included as a `provided` dependency.
 
 ```groovy
-apt 'me.mattlogan.auto.value:auto-value-firebase:0.1.1'
-provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:0.1.1'
+apt 'me.mattlogan.auto.value:auto-value-firebase:0.2.0'
+provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:0.2.0'
 ```
 
 
