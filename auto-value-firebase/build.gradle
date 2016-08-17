@@ -18,7 +18,7 @@ dependencies {
 ext {
   PUBLISH_GROUP_ID = 'me.mattlogan.auto.value'
   PUBLISH_ARTIFACT_ID = 'auto-value-firebase'
-  PUBLISH_VERSION = '0.2.0'
+  PUBLISH_VERSION = '0.1.1'
 }
 
 apply from: rootProject.file('gradle/release-jar.gradle')
