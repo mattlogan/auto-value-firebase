@@ -19,8 +19,12 @@ import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
 
 @AutoService(AutoValueExtension.class)
 public class AutoValueFirebaseExtension extends AutoValueExtension {
@@ -64,7 +68,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     ClassName className = ClassName.get(packageName, classNameString);
 
     TypeSpec firebaseValue = TypeSpec.classBuilder(FIREBASEVALUE)
-                                     .addModifiers(Modifier.STATIC, Modifier.FINAL)
+                                     .addModifiers(STATIC, FINAL)
                                      .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
                                      .addFields(generateFirebaseValueFields(packageName, types))
                                      .addMethod(generateEmptyFirebaseValueConstructor())
@@ -143,7 +147,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       checkIfTypeIsSupported(entry.getValue());
 
       if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
-        fields.add(FieldSpec.builder(originalType, fieldName, Modifier.PRIVATE).build());
+        fields.add(FieldSpec.builder(originalType, fieldName, PRIVATE).build());
 
       } else if (typeIsNonPrimitiveCollection(originalType)) {
         ParameterizedTypeName fullType = (ParameterizedTypeName) originalType;
@@ -155,7 +159,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
           ParameterizedTypeName newFullType =
             ParameterizedTypeName.get(rawType, newTypeParam);
 
-          fields.add(FieldSpec.builder(newFullType, fieldName, Modifier.PRIVATE).build());
+          fields.add(FieldSpec.builder(newFullType, fieldName, PRIVATE).build());
 
         } else if (MAP.equals(rawType)) {
           ClassName keyParam = (ClassName) fullType.typeArguments.get(0);
@@ -165,13 +169,13 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
           ParameterizedTypeName newFullType =
             ParameterizedTypeName.get(rawType, keyParam, newTypeParam);
 
-          fields.add(FieldSpec.builder(newFullType, fieldName, Modifier.PRIVATE).build());
+          fields.add(FieldSpec.builder(newFullType, fieldName, PRIVATE).build());
         }
       } else {
         ClassName firebaseValueName =
           ClassName.get(packageName, AUTOVALUE_PREFIX + ((ClassName) originalType).simpleName(), FIREBASEVALUE);
 
-        fields.add(FieldSpec.builder(firebaseValueName, fieldName, Modifier.PRIVATE).build());
+        fields.add(FieldSpec.builder(firebaseValueName, fieldName, PRIVATE).build());
       }
     }
 
@@ -266,7 +270,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
 
       MethodSpec.Builder methodBuilder =
         MethodSpec.methodBuilder(fieldNameToGetterName(fieldName))
-                  .addModifiers(Modifier.PUBLIC)
+                  .addModifiers(PUBLIC)
                   .addCode("return " + fieldName + ";\n");
 
       methodBuilder.addAnnotations(generateFirebaseValueMethodAnnotations(entry.getValue()));
