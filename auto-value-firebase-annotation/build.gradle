@@ -3,7 +3,7 @@ apply plugin: 'java'
 ext {
   PUBLISH_GROUP_ID = 'me.mattlogan.auto.value'
   PUBLISH_ARTIFACT_ID = 'auto-value-firebase-annotation'
-  PUBLISH_VERSION = '0.2.0'
+  PUBLISH_VERSION = '0.2.1'
 }
 
 apply from: rootProject.file('gradle/release-jar.gradle')
