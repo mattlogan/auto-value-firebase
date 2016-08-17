@@ -21,6 +21,7 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
+import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
@@ -83,6 +84,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                                       .superclass(TypeVariableName.get(classToExtend))
                                       .addMethod(generateStandardAutoValueConstructor(types))
                                       .addType(firebaseValue)
+                                      .addModifiers(isFinal ? FINAL : ABSTRACT)
                                       .build();
 
     return JavaFile.builder(packageName, generatedClass).build().toString();
