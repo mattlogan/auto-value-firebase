@@ -110,8 +110,8 @@ This extension should be included as an `apt` dependency (if you're using [andro
 The `@FirebaseValue` annotation is packaged separately, and should be included as a `provided` dependency.
 
 ```groovy
-apt 'me.mattlogan.auto.value:auto-value-firebase:0.2.1'
-provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:0.2.1'
+apt 'me.mattlogan.auto.value:auto-value-firebase:0.2.2'
+provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:0.2.2'
 ```
 
 

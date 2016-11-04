@@ -20,3 +20,8 @@ Version 0.2.1 *8-17-2016*
 ----------------------------
 
 - Make generated `AutoValue` class final if `isFinal` is true, otherwise make it abstract
+
+Version 0.2.2 *11-4-2016*
+----------------------------
+
+- Update `AutoValue` to 1.3
