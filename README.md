@@ -69,6 +69,20 @@ In addition to the empty constructor required by `Firebase Realtime Database`, t
 
 The `create(DataSnapshot)` and `toFirebaseValue` methods aren't required, but this is how I'd recommend converting your `AutoValue` objects to and from their corresponding `FirebaseValue` objects.
 
+### Collections
+
+If you want to deserialize a collection of objects from a `DataSnapshot`, you can iterate through its children and convert each object from `FirebaseValue` to `AutoValue`. This method could be added to the `Taco` class above.
+
+```java
+public static Map<String, Taco> createMap(DataSnapshot snapshot) {
+  Map<String, Taco> tacos = new HashMap<>();
+  for (DataSnapshot child : snapshot.getChildren()) {
+    tacos.put(child.getKey(), child.getValue(AutoValue_Taco.FirebaseValue.class).toAutoValue());
+  }
+  return tacos;
+}
+```
+
 ### Supported types
 
 This extension can generate `FirebaseValue` classes that contain any types that `Firebase Realtime Database` supports as described in their [documentation] **except for nested collections**.
