@@ -1041,4 +1041,25 @@ public class AutoValueFirebaseExtensionTest {
       .processedWith(new AutoValueProcessor())
       .failsToCompile();
   }
+
+  @Test
+  public void typeAdapterEnum() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+        + "\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "import java.util.ArrayList;\n"
+        + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+        + "\n"
+        + "@AutoValue @FirebaseValue\n"
+        + "public class Taco {\n"
+        + "  enum Status { UNCOOKED, COOKED } "
+        + "  @FirebaseAdapter(EnumAdapter.class) Status status();"
+        + "}\n");
+
+    assertAbout(javaSources())
+      .that(Arrays.asList(EXCLUDE, source))
+      .processedWith(new AutoValueProcessor())
+      .failsToCompile();
+  }
 }

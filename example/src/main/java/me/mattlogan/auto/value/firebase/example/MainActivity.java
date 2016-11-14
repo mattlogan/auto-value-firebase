@@ -13,6 +13,7 @@ import java.util.List;
 import me.mattlogan.auto.value.firebase.R;
 import me.mattlogan.auto.value.firebase.example.models.Ingredient;
 import me.mattlogan.auto.value.firebase.example.models.Review;
+import me.mattlogan.auto.value.firebase.example.models.Status;
 import me.mattlogan.auto.value.firebase.example.models.Taco;
 
 public class MainActivity extends AppCompatActivity {
@@ -59,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
 
     Review review = Review.create("Amazing taco.", 5);
 
-    Taco taco = Taco.create("Kalimari Desert", ingredients, review);
+    Taco taco = Taco.create("Kalimari Desert", ingredients, review, Status.COOKED);
 
     tacoRef = tacosRef.push();
     tacoRef.setValue(taco.toFirebaseValue());
