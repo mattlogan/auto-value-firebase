@@ -1044,22 +1044,90 @@ public class AutoValueFirebaseExtensionTest {
 
   @Test
   public void typeAdapterEnum() throws Exception {
+    JavaFileObject typeAdapterSource = JavaFileObjects.forSourceLines("test.StatusAdapter",
+      "package test;\n" +
+        "\n" +
+        "import me.mattlogan.auto.value.firebase.TypeAdapter;\n" +
+        "import test.Taco.Status;\n"+
+        "\n" +
+        "public class StatusAdapter implements TypeAdapter<Status, String> {\n" +
+        "  @Override\n" +
+        "  public Status fromFirebaseValue(String value) {\n" +
+        "    if(\"cooked\".equals(value)){\n" +
+        "      return Status.COOKED;\n" +
+        "    }\n" +
+        "    else if(\"uncooked\".equals(value)){\n" +
+        "      return Status.UNCOOKED;\n" +
+        "    }\n" +
+        "    else {\n" +
+        "      throw new IllegalStateException(\"unsupported\");\n" +
+        "    }\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public String toFirebaseValue(Status value) {\n" +
+        "    switch (value){\n" +
+        "      case COOKED:\n" +
+        "        return \"cooked\";\n" +
+        "      case UNCOOKED:\n" +
+        "        return \"uncooked\";\n" +
+        "      default:\n" +
+        "        throw new IllegalStateException(\"unsupported\");\n" +
+        "    }\n" +
+        "  }\n" +
+        "}");
     JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
       "package test;\n"
         + "\n"
         + "import com.google.auto.value.AutoValue;\n"
         + "import java.util.ArrayList;\n"
         + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+        + "import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;\n"
         + "\n"
         + "@AutoValue @FirebaseValue\n"
-        + "public class Taco {\n"
-        + "  enum Status { UNCOOKED, COOKED } "
-        + "  @FirebaseAdapter(EnumAdapter.class) Status status();"
+        + "public abstract class Taco {\n"
+        + "  enum Status { UNCOOKED, COOKED }; "
+        + "  @FirebaseAdapter(StatusAdapter.class) abstract Status status();"
         + "}\n");
 
+    JavaFileObject expectedOutput = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n" +
+        "\n" +
+        "import com.google.firebase.database.Exclude;\n" +
+        "import java.lang.String;\n" +
+        "import java.lang.SuppressWarnings;" +
+        "final class AutoValue_Taco extends $AutoValue_Taco {\n" +
+        "  private static StatusAdapter statusAdapter;\n" +
+        "\n" +
+        "  AutoValue_TestTaco(Taco.Status status) {\n" +
+        "    super(status);\n" +
+        "  }\n" +
+        "\n" +
+        "  static final class FirebaseValue {\n" +
+        "    private String status;\n" +
+        "    @SuppressWarnings(\"unused\")\n" +
+        "    FirebaseValue() {\n" +
+        "      statusAdapter = new StatusAdapter();\n" +
+        "    }\n" +
+        "    FirebaseValue(Taco taco) {\n" +
+        "      this();\n" +
+        "      this.status = taco.status() == null ? null : statusAdapter.toFirebaseValue(taco.status());\n" +
+        "    }\n" +
+        "    @Exclude\n" +
+        "    AutoValue_Taco toAutoValue() {\n" +
+        "      Taco.Status status = this.status == null ? null : statusAdapter.fromFirebaseValue(this.status);\n" +
+        "      return new AutoValue_Taco(status);\n" +
+        "    }\n" +
+        "    public String getStatus() {\n" +
+        "      return status;\n" +
+        "    }\n" +
+        "  }\n" +
+        "}");
     assertAbout(javaSources())
-      .that(Arrays.asList(EXCLUDE, source))
+      .that(Arrays.asList(EXCLUDE, typeAdapterSource, source))
       .processedWith(new AutoValueProcessor())
-      .failsToCompile();
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expectedOutput);
   }
 }

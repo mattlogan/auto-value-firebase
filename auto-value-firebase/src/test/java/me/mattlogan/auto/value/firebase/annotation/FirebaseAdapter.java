@@ -30,5 +30,5 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 @Retention(SOURCE)
 @Documented
 public @interface FirebaseAdapter {
-    Class<? extends TypeAdapter<?>> value();
+    Class<? extends TypeAdapter<?, ?>> value();
 }
