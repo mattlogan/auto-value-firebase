@@ -4,7 +4,7 @@ import java.util.Date;
 
 import me.mattlogan.auto.value.firebase.TypeAdapter;
 
-public class DateAdapter implements TypeAdapter<Date, Long>{
+public class DateAdapter implements TypeAdapter<Date, Long> {
   @Override
   public Date fromFirebaseValue(Long value) {
     return new Date(value);
