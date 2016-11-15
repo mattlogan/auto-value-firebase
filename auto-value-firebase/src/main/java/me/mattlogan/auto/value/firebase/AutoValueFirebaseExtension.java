@@ -5,6 +5,7 @@ import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -21,8 +22,12 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.util.Types;
 
 import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;
 
@@ -54,6 +59,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     ClassName.get("com.google.firebase.database", "Exclude");
   static final ClassName PROPERTY_NAME =
     ClassName.get("com.google.firebase.database", "PropertyName");
+  private static Types typeUtils;
 
   @Override
   public boolean applicable(Context context) {
@@ -68,6 +74,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
   @Override
   public String generateClass(Context context, String classNameString, String classToExtend, boolean isFinal) {
     String packageName = context.packageName();
+    typeUtils = context.processingEnvironment().getTypeUtils();
     TypeElement autoValueTypeElement = context.autoValueClass();
     Map<String, ExecutableElement> properties = context.properties();
     LinkedHashMap<String, TypeName> types = convertPropertiesToTypes(properties);
@@ -98,18 +105,10 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
   static LinkedHashMap<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
     LinkedHashMap<String, TypeName> types = new LinkedHashMap<>();
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
-      if(typeHasAdapter(entry.getValue())){
-        TypeMirror typeAdapterClass = getTypeAdapterClass(entry.getValue()
-          .getAnnotation(FirebaseAdapter.class));
-        TypeName returnTypeName = TypeName.get(entry.getValue().getReturnType());
-        returnTypeName = returnTypeName.annotated(AnnotationSpec.builder(FirebaseAdapter.class)
-          .addMember("value", "$T", TypeName.get(typeAdapterClass))
-          .build());
-        types.put(entry.getKey(), returnTypeName);
-      }
-      else {
-        types.put(entry.getKey(), TypeName.get(entry.getValue().getReturnType()));
-      }
+      TypeName returnTypeName;
+      ExecutableElement element = entry.getValue();
+      returnTypeName = getTypeNameForElement(element);
+      types.put(entry.getKey(), returnTypeName);
     }
     return types;
   }
@@ -165,7 +164,8 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       checkIfTypeIsSupported(entry.getValue());
 
       if(typeHasAdapter(originalType)){
-        fields.add(FieldSpec.builder(STRING, fieldName, PRIVATE).build());
+        ClassName output = getTypeAdapterOutputType(originalType);
+        fields.add(FieldSpec.builder(output, fieldName, PRIVATE).build());
       }
       else if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         fields.add(FieldSpec.builder(originalType, fieldName, PRIVATE).build());
@@ -304,7 +304,8 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       methodBuilder.addAnnotations(generateFirebaseValueMethodAnnotations(entry.getValue()));
 
       if(typeHasAdapter(entry.getValue())){
-        methodBuilder.returns(STRING);
+        TypeName typeNameForElement = getTypeNameForElement(entry.getValue());
+        methodBuilder.returns(getTypeAdapterOutputType(typeNameForElement));
       }
       else if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         methodBuilder.returns(originalType);
@@ -379,9 +380,10 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
 
       if(hasTypeAdapter){
         AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(entry.getValue());
+        Map<String, List<CodeBlock>> annotationmemebers = typeAdapterSpec.members;
         methodBuilder.addStatement("$T $L = this.$L == null ? null " +
           ": new $L().fromFirebaseValue(this.$L)",
-          type, fieldName, fieldName, typeAdapterSpec.members.get("value").get(0), fieldName);
+          type, fieldName, fieldName, annotationmemebers.get("value").get(0), fieldName);
 
       } else if (typeIsPrimitive(type) || typeIsPrimitiveCollection(type)) {
         methodBuilder.addStatement("$T $L = this.$L", type, fieldName, fieldName);
@@ -562,6 +564,35 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       }
     }
     return typeAdapterSpec;
+  }
+
+  private static ClassName getTypeAdapterOutputType(TypeName originalType) {
+    Map<String, List<CodeBlock>> members = originalType.annotations.get(0).members;
+    return ClassName.bestGuess(members.get("output").get(0).toString());
+  }
+
+  private static TypeName getTypeNameForElement(ExecutableElement element) {
+    TypeName returnTypeName;
+    if(typeHasAdapter(element)){
+      TypeMirror typeAdapterClass = getTypeAdapterClass(element
+        .getAnnotation(FirebaseAdapter.class));
+
+      TypeElement typeAdapterTypeElement = (TypeElement) typeUtils.asElement(typeAdapterClass);
+      List<? extends TypeMirror> interfaces = typeAdapterTypeElement.getInterfaces();
+      DeclaredType typeAdapterDeclaredType = (DeclaredType) interfaces.get(0);
+      List<? extends TypeMirror> typeArguments = typeAdapterDeclaredType.getTypeArguments();
+
+      returnTypeName = TypeName.get(element.getReturnType());
+      returnTypeName = returnTypeName.annotated(AnnotationSpec.builder(FirebaseAdapter.class)
+        .addMember("value", "$T", TypeName.get(typeAdapterClass))
+        .addMember("input", "$T", TypeName.get(typeArguments.get(0)))
+        .addMember("output", "$T", TypeName.get(typeArguments.get(1)))
+        .build());
+    }
+    else {
+      returnTypeName = TypeName.get(element.getReturnType());
+    }
+    return returnTypeName;
   }
 
 }

@@ -2,7 +2,7 @@ package me.mattlogan.auto.value.firebase.example.models;
 
 import me.mattlogan.auto.value.firebase.TypeAdapter;
 
-public class StatusAdapter implements TypeAdapter<Status> {
+public class StatusAdapter implements TypeAdapter<Status, String> {
   @Override
   public Status fromFirebaseValue(String value) {
     if("cooked".equals(value)){

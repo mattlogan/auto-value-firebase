@@ -1,7 +1,7 @@
 package me.mattlogan.auto.value.firebase;
 
-public interface TypeAdapter<T> {
-    T fromFirebaseValue(String value);
+public interface TypeAdapter<T, V> {
+    T fromFirebaseValue(V value);
 
-    String toFirebaseValue(T value);
+    V toFirebaseValue(T value);
 }
