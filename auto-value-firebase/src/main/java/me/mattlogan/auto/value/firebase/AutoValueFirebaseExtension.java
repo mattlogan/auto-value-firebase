@@ -84,7 +84,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                                      .addModifiers(STATIC, FINAL)
                                      .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
                                      .addFields(generateFirebaseValueFields(packageName, types))
-                                     .addMethod(generateEmptyFirebaseValueConstructor())
+                                     .addMethod(generateEmptyFirebaseValueConstructor(types))
                                      .addMethod(generateFirebaseValueConstructorWithAutoValueParam(
                                        packageName, autoValueTypeElement, types))
                                      .addMethod(generateFirebaseValueToAutoValueMethod(
@@ -94,6 +94,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
 
     TypeSpec generatedClass = TypeSpec.classBuilder(className)
                                       .superclass(TypeVariableName.get(classToExtend))
+                                      .addFields(generateAdapterFields(types))
                                       .addMethod(generateStandardAutoValueConstructor(types))
                                       .addType(firebaseValue)
                                       .addModifiers(isFinal ? FINAL : ABSTRACT)
@@ -102,6 +103,24 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return JavaFile.builder(packageName, generatedClass).build().toString();
   }
 
+  static List<FieldSpec> generateAdapterFields(Map<String, TypeName> types) {
+    List<FieldSpec> fieldSpecs = new ArrayList<>();
+
+    for (String key : types.keySet()) {
+      TypeName typeName = types.get(key);
+      if(typeHasAdapter(typeName)){
+        AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(typeName);
+        ClassName typeAdapterClassName = ClassName.bestGuess(typeAdapterSpec.members
+          .get("value")
+          .get(0)
+          .toString());
+        fieldSpecs.add(FieldSpec.builder(typeAdapterClassName,
+          firstLetterToLowerCase(typeAdapterClassName), STATIC, PRIVATE).build());
+      }
+    }
+
+    return fieldSpecs;
+  }
   static LinkedHashMap<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
     LinkedHashMap<String, TypeName> types = new LinkedHashMap<>();
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
@@ -203,12 +222,27 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return fields;
   }
 
-  static MethodSpec generateEmptyFirebaseValueConstructor() {
-    return MethodSpec.constructorBuilder()
-                     .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
-                                                  .addMember("value", "\"unused\"")
-                                                  .build())
-                     .build();
+  static MethodSpec generateEmptyFirebaseValueConstructor(LinkedHashMap<String, TypeName> types) {
+    MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
+      .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+        .addMember("value", "\"unused\"")
+        .build());
+
+    for (String key : types.keySet()) {
+      TypeName typeName = types.get(key);
+      if(typeHasAdapter(typeName)){
+        AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(typeName);
+        ClassName typeAdapterClassName = ClassName.bestGuess(typeAdapterSpec.members
+          .get("value")
+          .get(0)
+          .toString());
+        constructorBuilder.addStatement("$L = new $T()",
+          firstLetterToLowerCase(typeAdapterClassName)
+          , typeAdapterClassName);
+      }
+    }
+
+    return constructorBuilder.build();
   }
 
   static MethodSpec generateFirebaseValueConstructorWithAutoValueParam(String packageName,
@@ -220,16 +254,22 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     autoValueConstructorBuilder.addParameter(
       ParameterSpec.builder(autoValueType, autoValueConstructorParamName).build());
 
+    autoValueConstructorBuilder.addStatement("this()");
+
     for (Map.Entry<String, TypeName> entry : types.entrySet()) {
       String fieldName = entry.getKey();
       TypeName originalType = entry.getValue();
 
       if(typeHasAdapter(originalType)){
         AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(originalType);
+        ClassName adapterInstance = ClassName.bestGuess(typeAdapterSpec.members
+          .get("value")
+          .get(0)
+          .toString());
         autoValueConstructorBuilder.addCode("this.$L = $L.$L() == null ? null " +
-          ": new $L().toFirebaseValue($L.$L());\n",
+          ": $L.toFirebaseValue($L.$L());\n",
           fieldName, autoValueConstructorParamName, fieldName,
-          typeAdapterSpec.members.get("value").get(0), autoValueConstructorParamName, fieldName);
+          firstLetterToLowerCase(adapterInstance), autoValueConstructorParamName, fieldName);
       }
       else if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         autoValueConstructorBuilder.addCode("this.$L = $L.$L();\n",
@@ -381,9 +421,11 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       if(hasTypeAdapter){
         AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(entry.getValue());
         Map<String, List<CodeBlock>> annotationmemebers = typeAdapterSpec.members;
+        ClassName adapterInstance = ClassName.bestGuess(annotationmemebers.get("value").get(0)
+          .toString());
         methodBuilder.addStatement("$T $L = this.$L == null ? null " +
-          ": new $L().fromFirebaseValue(this.$L)",
-          type, fieldName, fieldName, annotationmemebers.get("value").get(0), fieldName);
+          ": $L.fromFirebaseValue(this.$L)",
+          type, fieldName, fieldName, firstLetterToLowerCase(adapterInstance), fieldName);
 
       } else if (typeIsPrimitive(type) || typeIsPrimitiveCollection(type)) {
         methodBuilder.addStatement("$T $L = this.$L", type, fieldName, fieldName);
