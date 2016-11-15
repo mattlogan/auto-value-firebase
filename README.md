@@ -83,6 +83,45 @@ public static Map<String, Taco> createMap(DataSnapshot snapshot) {
 }
 ```
 
+### TypeAdapters
+
+Type adapters can be declared and used as follows:
+```java
+public class DateAdapter implements TypeAdapter<Date, Long> {
+  @Override
+  public Date fromFirebaseValue(Long value) {
+    return new Date(value);
+  }
+
+  @Override
+  public Long toFirebaseValue(Date value) {
+    return value.getTime();
+  }
+}
+```
+
+```java
+@AutoValue @FirebaseValue
+public abstract class Review {
+
+  public static Review create(String description, int rating, Date reviewDate) {
+    return new AutoValue_Review(description, rating, reviewDate);
+  }
+
+  public abstract String description();
+
+  public abstract int rating();
+
+  @FirebaseAdapter(DateAdapter.class) public abstract Date dateOfReview();
+}
+
+```
+
+Type adapters require a small runtime component which can be added to your gradle dependencies:
+
+`compile 'me.mattlogan.auto.value.firebase:type-adapters:0.2.2'`
+
+
 ### Supported types
 
 This extension can generate `FirebaseValue` classes that contain any types that `Firebase Realtime Database` supports as described in their [documentation] **except for nested collections**.
