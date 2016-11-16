@@ -1097,7 +1097,6 @@ public class AutoValueFirebaseExtensionTest {
         "import java.lang.String;\n" +
         "import java.lang.SuppressWarnings;" +
         "final class AutoValue_Taco extends $AutoValue_Taco {\n" +
-        "  private static StatusAdapter statusAdapter;\n" +
         "\n" +
         "  AutoValue_TestTaco(Taco.Status status) {\n" +
         "    super(status);\n" +
@@ -1105,12 +1104,11 @@ public class AutoValueFirebaseExtensionTest {
         "\n" +
         "  static final class FirebaseValue {\n" +
         "    private String status;\n" +
+        "    private final StatusAdapter statusAdapter = new StatusAdapter();\n" +
         "    @SuppressWarnings(\"unused\")\n" +
         "    FirebaseValue() {\n" +
-        "      statusAdapter = new StatusAdapter();\n" +
         "    }\n" +
         "    FirebaseValue(Taco taco) {\n" +
-        "      this();\n" +
         "      this.status = taco.status() == null ? null : statusAdapter.toFirebaseValue(taco.status());\n" +
         "    }\n" +
         "    @Exclude\n" +

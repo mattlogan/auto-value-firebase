@@ -22,11 +22,9 @@ import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Types;
 
 import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;
@@ -84,7 +82,8 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                                      .addModifiers(STATIC, FINAL)
                                      .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
                                      .addFields(generateFirebaseValueFields(packageName, types))
-                                     .addMethod(generateEmptyFirebaseValueConstructor(types))
+                                     .addFields(generateAdapterFields(types))
+                                     .addMethod(generateEmptyFirebaseValueConstructor())
                                      .addMethod(generateFirebaseValueConstructorWithAutoValueParam(
                                        packageName, autoValueTypeElement, types))
                                      .addMethod(generateFirebaseValueToAutoValueMethod(
@@ -94,7 +93,6 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
 
     TypeSpec generatedClass = TypeSpec.classBuilder(className)
                                       .superclass(TypeVariableName.get(classToExtend))
-                                      .addFields(generateAdapterFields(types))
                                       .addMethod(generateStandardAutoValueConstructor(types))
                                       .addType(firebaseValue)
                                       .addModifiers(isFinal ? FINAL : ABSTRACT)
@@ -115,7 +113,8 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
           .get(0)
           .toString());
         fieldSpecs.add(FieldSpec.builder(typeAdapterClassName,
-          firstLetterToLowerCase(typeAdapterClassName), STATIC, PRIVATE).build());
+          firstLetterToLowerCase(typeAdapterClassName), PRIVATE, FINAL)
+                                .initializer("new $T()", typeAdapterClassName).build());
       }
     }
 
@@ -221,27 +220,11 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return fields;
   }
 
-  static MethodSpec generateEmptyFirebaseValueConstructor(LinkedHashMap<String, TypeName> types) {
-    MethodSpec.Builder constructorBuilder = MethodSpec.constructorBuilder()
-      .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
+  static MethodSpec generateEmptyFirebaseValueConstructor() {
+    return MethodSpec.constructorBuilder()
+                     .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
         .addMember("value", "\"unused\"")
-        .build());
-
-    for (String key : types.keySet()) {
-      TypeName typeName = types.get(key);
-      if (typeHasAdapter(typeName)) {
-        AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(typeName);
-        ClassName typeAdapterClassName = ClassName.bestGuess(typeAdapterSpec.members
-          .get("value")
-          .get(0)
-          .toString());
-        constructorBuilder.addStatement("$L = new $T()",
-          firstLetterToLowerCase(typeAdapterClassName)
-          , typeAdapterClassName);
-      }
-    }
-
-    return constructorBuilder.build();
+        .build()).build();
   }
 
   static MethodSpec generateFirebaseValueConstructorWithAutoValueParam(String packageName,
@@ -252,8 +235,6 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     String autoValueConstructorParamName = firstLetterToLowerCase(autoValueType);
     autoValueConstructorBuilder.addParameter(
       ParameterSpec.builder(autoValueType, autoValueConstructorParamName).build());
-
-    autoValueConstructorBuilder.addStatement("this()");
 
     for (Map.Entry<String, TypeName> entry : types.entrySet()) {
       String fieldName = entry.getKey();
