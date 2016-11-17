@@ -1128,4 +1128,98 @@ public class AutoValueFirebaseExtensionTest {
       .and()
       .generatesSources(expectedOutput);
   }
+
+  @Test
+  public void typeAdapterEnumDuplicateAdapter() throws Exception {
+    JavaFileObject typeAdapterSource = JavaFileObjects.forSourceLines("test.StatusAdapter",
+      "package test;\n" +
+        "\n" +
+        "import me.mattlogan.auto.value.firebase.TypeAdapter;\n" +
+        "import test.Taco.Status;\n" +
+        "\n" +
+        "public class StatusAdapter implements TypeAdapter<Status, String> {\n" +
+        "  @Override\n" +
+        "  public Status fromFirebaseValue(String value) {\n" +
+        "    if(\"cooked\".equals(value)){\n" +
+        "      return Status.COOKED;\n" +
+        "    }\n" +
+        "    else if(\"uncooked\".equals(value)){\n" +
+        "      return Status.UNCOOKED;\n" +
+        "    }\n" +
+        "    else {\n" +
+        "      throw new IllegalStateException(\"unsupported\");\n" +
+        "    }\n" +
+        "  }\n" +
+        "\n" +
+        "  @Override\n" +
+        "  public String toFirebaseValue(Status value) {\n" +
+        "    switch (value){\n" +
+        "      case COOKED:\n" +
+        "        return \"cooked\";\n" +
+        "      case UNCOOKED:\n" +
+        "        return \"uncooked\";\n" +
+        "      default:\n" +
+        "        throw new IllegalStateException(\"unsupported\");\n" +
+        "    }\n" +
+        "  }\n" +
+        "}");
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+      "package test;\n"
+        + "\n"
+        + "import com.google.auto.value.AutoValue;\n"
+        + "import java.util.ArrayList;\n"
+        + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+        + "import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;\n"
+        + "\n"
+        + "@AutoValue @FirebaseValue\n"
+        + "public abstract class Taco {\n"
+        + "  enum Status { UNCOOKED, COOKED }; "
+        + "  @FirebaseAdapter(StatusAdapter.class) abstract Status status();"
+        + "  @FirebaseAdapter(StatusAdapter.class) abstract Status secondaryStatus();"
+        + "}\n");
+
+    JavaFileObject expectedOutput = JavaFileObjects.forSourceString("test.AutoValue_Taco",
+      "package test;\n" +
+        "\n" +
+        "import com.google.firebase.database.Exclude;\n" +
+        "import java.lang.String;\n" +
+        "import java.lang.SuppressWarnings;" +
+        "final class AutoValue_Taco extends $AutoValue_Taco {\n" +
+        "\n" +
+        "  AutoValue_TestTaco(Taco.Status status, Taco.Status secondaryStatus) {\n" +
+        "    super(status, secondaryStatus);\n" +
+        "  }\n" +
+        "\n" +
+        "  static final class FirebaseValue {\n" +
+        "    private String status;\n" +
+        "    private String secondaryStatus;\n"+
+        "    private final StatusAdapter statusAdapter = new StatusAdapter();\n" +
+        "    @SuppressWarnings(\"unused\")\n" +
+        "    FirebaseValue() {\n" +
+        "    }\n" +
+        "    FirebaseValue(Taco taco) {\n" +
+        "      this.status = taco.status() == null ? null : statusAdapter.toFirebaseValue(taco.status());\n" +
+        "      this.secondaryStatus = taco.secondaryStatus() == null ? null: statusAdapter.toFirebaseValue(taco.secondaryStatus());\n"+
+        "    }\n" +
+        "    @Exclude\n" +
+        "    AutoValue_Taco toAutoValue() {\n" +
+        "      Taco.Status status = this.status == null ? null : statusAdapter.fromFirebaseValue(this.status);\n" +
+        "      Taco.Status secondaryStatus = this.secondaryStatus == null ? null : statusAdapter.fromFirebaseValue(this.secondaryStatus);\n" +
+        "      return new AutoValue_Taco(status, secondaryStatus);\n" +
+        "    }\n" +
+        "    public String getStatus() {\n" +
+        "      return status;\n" +
+        "    }\n" +
+        "    public String getSecondaryStatus() {\n" +
+        "      return secondaryStatus;\n" +
+        "    }\n" +
+        "  }\n" +
+        "}");
+    assertAbout(javaSources())
+      .that(Arrays.asList(EXCLUDE, typeAdapterSource, source))
+      .processedWith(new AutoValueProcessor())
+      .compilesWithoutError()
+      .and()
+      .generatesSources(expectedOutput);
+  }
 }

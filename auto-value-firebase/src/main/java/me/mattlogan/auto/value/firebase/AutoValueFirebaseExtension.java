@@ -16,8 +16,11 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -101,8 +104,8 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return JavaFile.builder(packageName, generatedClass).build().toString();
   }
 
-  static List<FieldSpec> generateAdapterFields(Map<String, TypeName> types) {
-    List<FieldSpec> fieldSpecs = new ArrayList<>();
+  static Set<FieldSpec> generateAdapterFields(Map<String, TypeName> types) {
+    Set<FieldSpec> fieldSpecs = new LinkedHashSet<>();
 
     for (String key : types.keySet()) {
       TypeName typeName = types.get(key);
