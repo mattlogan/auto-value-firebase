@@ -5,6 +5,7 @@ import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.Lists;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.MethodSpec;
@@ -18,8 +19,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Types;
+
+import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.element.Modifier.FINAL;
@@ -49,6 +57,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     ClassName.get("com.google.firebase.database", "Exclude");
   static final ClassName PROPERTY_NAME =
     ClassName.get("com.google.firebase.database", "PropertyName");
+  private static Types typeUtils;
 
   @Override
   public boolean applicable(Context context) {
@@ -63,6 +72,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
   @Override
   public String generateClass(Context context, String classNameString, String classToExtend, boolean isFinal) {
     String packageName = context.packageName();
+    typeUtils = context.processingEnvironment().getTypeUtils();
     TypeElement autoValueTypeElement = context.autoValueClass();
     Map<String, ExecutableElement> properties = context.properties();
     LinkedHashMap<String, TypeName> types = convertPropertiesToTypes(properties);
@@ -72,6 +82,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                                      .addModifiers(STATIC, FINAL)
                                      .addAnnotations(generateFirebaseValueClassAnnotations(autoValueTypeElement))
                                      .addFields(generateFirebaseValueFields(packageName, types))
+                                     .addFields(generateAdapterFields(types))
                                      .addMethod(generateEmptyFirebaseValueConstructor())
                                      .addMethod(generateFirebaseValueConstructorWithAutoValueParam(
                                        packageName, autoValueTypeElement, types))
@@ -90,10 +101,32 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return JavaFile.builder(packageName, generatedClass).build().toString();
   }
 
+  static List<FieldSpec> generateAdapterFields(Map<String, TypeName> types) {
+    List<FieldSpec> fieldSpecs = new ArrayList<>();
+
+    for (String key : types.keySet()) {
+      TypeName typeName = types.get(key);
+      if (typeHasAdapter(typeName)) {
+        AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(typeName);
+        ClassName typeAdapterClassName = ClassName.bestGuess(typeAdapterSpec.members
+          .get("value")
+          .get(0)
+          .toString());
+        fieldSpecs.add(FieldSpec.builder(typeAdapterClassName,
+          firstLetterToLowerCase(typeAdapterClassName), PRIVATE, FINAL)
+                                .initializer("new $T()", typeAdapterClassName).build());
+      }
+    }
+
+    return fieldSpecs;
+  }
   static LinkedHashMap<String, TypeName> convertPropertiesToTypes(Map<String, ExecutableElement> properties) {
     LinkedHashMap<String, TypeName> types = new LinkedHashMap<>();
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
-      types.put(entry.getKey(), TypeName.get(entry.getValue().getReturnType()));
+      TypeName returnTypeName;
+      ExecutableElement element = entry.getValue();
+      returnTypeName = getTypeNameForElement(element);
+      types.put(entry.getKey(), returnTypeName);
     }
     return types;
   }
@@ -101,7 +134,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
   static MethodSpec generateStandardAutoValueConstructor(Map<String, TypeName> properties) {
     List<ParameterSpec> params = Lists.newArrayList();
     for (Map.Entry<String, TypeName> entry : properties.entrySet()) {
-      params.add(ParameterSpec.builder(entry.getValue(), entry.getKey()).build());
+      params.add(ParameterSpec.builder(entry.getValue().withoutAnnotations(), entry.getKey()).build());
     }
 
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()
@@ -148,7 +181,10 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       // This is important! This doesn't have to be here, but it's gotta be somewhere.
       checkIfTypeIsSupported(entry.getValue());
 
-      if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
+      if (typeHasAdapter(originalType)) {
+        ClassName output = getTypeAdapterOutputType(originalType);
+        fields.add(FieldSpec.builder(output, fieldName, PRIVATE).build());
+      } else if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         fields.add(FieldSpec.builder(originalType, fieldName, PRIVATE).build());
 
       } else if (typeIsNonPrimitiveCollection(originalType)) {
@@ -187,9 +223,8 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
   static MethodSpec generateEmptyFirebaseValueConstructor() {
     return MethodSpec.constructorBuilder()
                      .addAnnotation(AnnotationSpec.builder(SuppressWarnings.class)
-                                                  .addMember("value", "\"unused\"")
-                                                  .build())
-                     .build();
+        .addMember("value", "\"unused\"")
+        .build()).build();
   }
 
   static MethodSpec generateFirebaseValueConstructorWithAutoValueParam(String packageName,
@@ -205,7 +240,17 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
       String fieldName = entry.getKey();
       TypeName originalType = entry.getValue();
 
-      if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
+      if (typeHasAdapter(originalType)) {
+        AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(originalType);
+        ClassName adapterInstance = ClassName.bestGuess(typeAdapterSpec.members
+          .get("value")
+          .get(0)
+          .toString());
+        autoValueConstructorBuilder.addCode("this.$L = $L.$L() == null ? null " +
+          ": $L.toFirebaseValue($L.$L());\n",
+          fieldName, autoValueConstructorParamName, fieldName,
+          firstLetterToLowerCase(adapterInstance), autoValueConstructorParamName, fieldName);
+      } else if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         autoValueConstructorBuilder.addCode("this.$L = $L.$L();\n",
           fieldName, autoValueConstructorParamName, fieldName);
 
@@ -277,7 +322,10 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
 
       methodBuilder.addAnnotations(generateFirebaseValueMethodAnnotations(entry.getValue()));
 
-      if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
+      if (typeHasAdapter(entry.getValue())) {
+        TypeName typeNameForElement = getTypeNameForElement(entry.getValue());
+        methodBuilder.returns(getTypeAdapterOutputType(typeNameForElement));
+      } else if (typeIsPrimitive(originalType) || typeIsPrimitiveCollection(originalType)) {
         methodBuilder.returns(originalType);
 
       } else if (typeIsNonPrimitiveCollection(originalType)) {
@@ -345,9 +393,19 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
 
     for (Map.Entry<String, TypeName> entry : types.entrySet()) {
       String fieldName = entry.getKey();
-      TypeName type = entry.getValue();
+      boolean hasTypeAdapter = typeHasAdapter(entry.getValue());
+      TypeName type = entry.getValue().withoutAnnotations();
 
-      if (typeIsPrimitive(type) || typeIsPrimitiveCollection(type)) {
+      if (hasTypeAdapter) {
+        AnnotationSpec typeAdapterSpec = getTypeAdapterSpec(entry.getValue());
+        Map<String, List<CodeBlock>> annotationmemebers = typeAdapterSpec.members;
+        ClassName adapterInstance = ClassName.bestGuess(annotationmemebers.get("value").get(0)
+          .toString());
+        methodBuilder.addStatement("$T $L = this.$L == null ? null " +
+          ": $L.fromFirebaseValue(this.$L)",
+          type, fieldName, fieldName, firstLetterToLowerCase(adapterInstance), fieldName);
+
+      } else if (typeIsPrimitive(type) || typeIsPrimitiveCollection(type)) {
         methodBuilder.addStatement("$T $L = this.$L", type, fieldName, fieldName);
 
       } else if (typeIsNonPrimitiveCollection(type)) {
@@ -429,6 +487,20 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return true;
   }
 
+  static boolean typeHasAdapter(TypeName typeName) {
+    boolean hasAdapter = false;
+    for (AnnotationSpec annotation : typeName.annotations) {
+      if (annotation.type.equals(AnnotationSpec.builder(FirebaseAdapter.class).build().type)) {
+        hasAdapter = true;
+      }
+    }
+    return hasAdapter;
+  }
+
+  static boolean typeHasAdapter(Element element) {
+    return element.getAnnotation(FirebaseAdapter.class) != null;
+  }
+
   static boolean typeIsPrimitive(TypeName typeName) {
     return typeName.isPrimitive() || typeName.isBoxedPrimitive() || STRING.equals(typeName);
   }
@@ -492,4 +564,54 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     String strippedSimpleName = simpleName.substring(numDollarSigns);
     return ClassName.get(className.packageName(), strippedSimpleName);
   }
+
+  static TypeMirror getTypeAdapterClass(FirebaseAdapter firebaseAdapter) {
+    try {
+      firebaseAdapter.value();
+    } catch (MirroredTypeException e) {
+      return e.getTypeMirror();
+    }
+    return null;
+  }
+
+  static AnnotationSpec getTypeAdapterSpec(TypeName originalType) {
+    AnnotationSpec firebaseAdapter = AnnotationSpec.builder(FirebaseAdapter.class).build();
+    AnnotationSpec typeAdapterSpec = null;
+    for (AnnotationSpec annotation : originalType.annotations) {
+      if (annotation.type.withoutAnnotations().equals(firebaseAdapter.type)) {
+        typeAdapterSpec= annotation;
+        break;
+      }
+    }
+    return typeAdapterSpec;
+  }
+
+  private static ClassName getTypeAdapterOutputType(TypeName originalType) {
+    Map<String, List<CodeBlock>> members = originalType.annotations.get(0).members;
+    return ClassName.bestGuess(members.get("output").get(0).toString());
+  }
+
+  private static TypeName getTypeNameForElement(ExecutableElement element) {
+    TypeName returnTypeName;
+    if (typeHasAdapter(element)) {
+      TypeMirror typeAdapterClass = getTypeAdapterClass(element
+        .getAnnotation(FirebaseAdapter.class));
+
+      TypeElement typeAdapterTypeElement = (TypeElement) typeUtils.asElement(typeAdapterClass);
+      List<? extends TypeMirror> interfaces = typeAdapterTypeElement.getInterfaces();
+      DeclaredType typeAdapterDeclaredType = (DeclaredType) interfaces.get(0);
+      List<? extends TypeMirror> typeArguments = typeAdapterDeclaredType.getTypeArguments();
+
+      returnTypeName = TypeName.get(element.getReturnType());
+      returnTypeName = returnTypeName.annotated(AnnotationSpec.builder(FirebaseAdapter.class)
+        .addMember("value", "$T", TypeName.get(typeAdapterClass))
+        .addMember("input", "$T", TypeName.get(typeArguments.get(0)))
+        .addMember("output", "$T", TypeName.get(typeArguments.get(1)))
+        .build());
+    } else {
+      returnTypeName = TypeName.get(element.getReturnType());
+    }
+    return returnTypeName;
+  }
+
 }

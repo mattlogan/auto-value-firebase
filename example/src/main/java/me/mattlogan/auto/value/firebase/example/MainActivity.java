@@ -9,10 +9,12 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import me.mattlogan.auto.value.firebase.R;
 import me.mattlogan.auto.value.firebase.example.models.Ingredient;
 import me.mattlogan.auto.value.firebase.example.models.Review;
+import me.mattlogan.auto.value.firebase.example.models.Status;
 import me.mattlogan.auto.value.firebase.example.models.Taco;
 
 public class MainActivity extends AppCompatActivity {
@@ -57,9 +59,9 @@ public class MainActivity extends AppCompatActivity {
     ingredients.add(Ingredient.create("Cheese", 1));
     ingredients.add(Ingredient.create("Flour tortilla", 1));
 
-    Review review = Review.create("Amazing taco.", 5);
+    Review review = Review.create("Amazing taco.", 5, new Date());
 
-    Taco taco = Taco.create("Kalimari Desert", ingredients, review);
+    Taco taco = Taco.create("Kalimari Desert", ingredients, review, Status.COOKED);
 
     tacoRef = tacosRef.push();
     tacoRef.setValue(taco.toFirebaseValue());
