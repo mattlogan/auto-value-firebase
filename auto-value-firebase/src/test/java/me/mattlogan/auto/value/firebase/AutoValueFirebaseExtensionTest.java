@@ -1047,7 +1047,7 @@ public class AutoValueFirebaseExtensionTest {
     JavaFileObject typeAdapterSource = JavaFileObjects.forSourceLines("test.StatusAdapter",
       "package test;\n" +
         "\n" +
-        "import me.mattlogan.auto.value.firebase.TypeAdapter;\n" +
+        "import me.mattlogan.auto.value.firebase.adapter.TypeAdapter;\n" +
         "import test.Taco.Status;\n"+
         "\n" +
         "public class StatusAdapter implements TypeAdapter<Status, String> {\n" +
@@ -1082,7 +1082,7 @@ public class AutoValueFirebaseExtensionTest {
         + "import com.google.auto.value.AutoValue;\n"
         + "import java.util.ArrayList;\n"
         + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
-        + "import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;\n"
+        + "import me.mattlogan.auto.value.firebase.adapter.FirebaseAdapter;\n"
         + "\n"
         + "@AutoValue @FirebaseValue\n"
         + "public abstract class Taco {\n"
@@ -1134,7 +1134,7 @@ public class AutoValueFirebaseExtensionTest {
     JavaFileObject typeAdapterSource = JavaFileObjects.forSourceLines("test.StatusAdapter",
       "package test;\n" +
         "\n" +
-        "import me.mattlogan.auto.value.firebase.TypeAdapter;\n" +
+        "import me.mattlogan.auto.value.firebase.adapter.TypeAdapter;\n" +
         "import test.Taco.Status;\n" +
         "\n" +
         "public class StatusAdapter implements TypeAdapter<Status, String> {\n" +
@@ -1169,7 +1169,7 @@ public class AutoValueFirebaseExtensionTest {
         + "import com.google.auto.value.AutoValue;\n"
         + "import java.util.ArrayList;\n"
         + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
-        + "import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;\n"
+        + "import me.mattlogan.auto.value.firebase.adapter.FirebaseAdapter;\n"
         + "\n"
         + "@AutoValue @FirebaseValue\n"
         + "public abstract class Taco {\n"

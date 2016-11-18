@@ -29,8 +29,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
-
-import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;
+import me.mattlogan.auto.value.firebase.adapter.FirebaseAdapter;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
 import static javax.lang.model.element.Modifier.FINAL;

@@ -4,7 +4,7 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import me.mattlogan.auto.value.firebase.TypeAdapter;
+import me.mattlogan.auto.value.firebase.adapter.TypeAdapter;
 
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.RetentionPolicy.SOURCE;

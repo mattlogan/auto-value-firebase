@@ -4,7 +4,7 @@ import com.google.auto.value.AutoValue;
 import com.google.firebase.database.DataSnapshot;
 import java.util.List;
 
-import me.mattlogan.auto.value.firebase.annotation.FirebaseAdapter;
+import me.mattlogan.auto.value.firebase.adapter.FirebaseAdapter;
 import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;
 
 @AutoValue @FirebaseValue

@@ -2,7 +2,7 @@ package me.mattlogan.auto.value.firebase.example.models;
 
 import java.util.Date;
 
-import me.mattlogan.auto.value.firebase.TypeAdapter;
+import me.mattlogan.auto.value.firebase.adapter.TypeAdapter;
 
 public class DateAdapter implements TypeAdapter<Date, Long> {
   @Override

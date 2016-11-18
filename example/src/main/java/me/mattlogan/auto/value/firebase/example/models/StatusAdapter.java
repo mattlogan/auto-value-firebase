@@ -1,6 +1,6 @@
 package me.mattlogan.auto.value.firebase.example.models;
 
-import me.mattlogan.auto.value.firebase.TypeAdapter;
+import me.mattlogan.auto.value.firebase.adapter.TypeAdapter;
 
 public class StatusAdapter implements TypeAdapter<Status, String> {
   @Override
