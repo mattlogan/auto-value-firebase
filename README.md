@@ -144,9 +144,14 @@ This extension should be included as an `apt` dependency (if you're using [andro
 
 The `@FirebaseValue` annotation is packaged separately, and should be included as a `provided` dependency.
 
+Type adapter support is optional and can be included as a `compile` dependency.
+
 ```groovy
-apt 'me.mattlogan.auto.value:auto-value-firebase:0.2.2'
-provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:0.2.2'
+apt 'me.mattlogan.auto.value:auto-value-firebase:1.0.1'
+provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:1.0.1'
+
+// Optional type adapter dependency
+compile 'me.mattlogan.auto.value:auto-value-firebase-adapter:1.0.1'
 ```
 
 

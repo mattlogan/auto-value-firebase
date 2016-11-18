@@ -25,3 +25,8 @@ Version 0.2.2 *11-4-2016*
 ----------------------------
 
 - Update `AutoValue` to 1.3
+
+Version 1.0.1 *11-18-2016*
+--------------------------
+
+- Add type adapter support
