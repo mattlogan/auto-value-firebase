@@ -1,4 +1,4 @@
 include ':example'
 include ':auto-value-firebase'
 include ':auto-value-firebase-annotation'
-include ':type-adapter'
+include ':auto-value-firebase-adapter'

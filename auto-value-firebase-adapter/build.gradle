@@ -8,7 +8,7 @@ dependencies {
 
 ext {
     PUBLISH_GROUP_ID = 'me.mattlogan.auto.value'
-    PUBLISH_ARTIFACT_ID = 'type-adapter'
+    PUBLISH_ARTIFACT_ID = 'auto-value-firebase-adapter'
     PUBLISH_VERSION = '0.2.2'
 }
 
