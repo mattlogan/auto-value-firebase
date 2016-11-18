@@ -119,7 +119,7 @@ public abstract class Review {
 
 Type adapters require a small runtime component which can be added to your gradle dependencies:
 
-`compile 'me.mattlogan.auto.value.firebase:type-adapters:0.2.2'`
+`compile 'me.mattlogan.auto.value.firebase:type-adapter:0.2.2'`
 
 
 ### Supported types
