@@ -23,7 +23,15 @@ uploadArchives {
     pom.artifactId = artifactId
     pom.version = version
 
-    // Add other pom properties here if you want (developer details / licenses)
+    pom.whenConfigured { pom ->
+      pom.dependencies.forEach { dep ->
+        if (dep.getVersion() == "unspecified") {
+          dep.setGroupId(groupId)
+          dep.setVersion(version)
+        }
+      }
+    }
+
     repository(url: "file://${localReleaseDest}")
   }
 }
