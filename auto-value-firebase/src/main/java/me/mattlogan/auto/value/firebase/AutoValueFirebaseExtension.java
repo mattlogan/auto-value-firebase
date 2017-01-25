@@ -272,7 +272,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
             .addStatement("this.$L = new $T<>()", fieldName, ARRAY_LIST)
             .beginControlFlow("for ($T item : $L.$L())",
               typeParam, autoValueConstructorParamName, fieldName)
-            .addStatement("$L.add(new $T(item))", fieldName, newTypeParam)
+            .addStatement("this.$L.add(new $T(item))", fieldName, newTypeParam)
             .endControlFlow()
             .endControlFlow();
 
@@ -290,7 +290,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
             .beginControlFlow("for ($T<$T, $T> entry : $L.$L().entrySet())",
               MAP_ENTRY, keyParam, valueParam,
               autoValueConstructorParamName, fieldName)
-            .addStatement("$L.put(entry.getKey(), new $T(entry.getValue()))",
+            .addStatement("this.$L.put(entry.getKey(), new $T(entry.getValue()))",
               fieldName, newTypeParam)
             .endControlFlow()
             .endControlFlow();
