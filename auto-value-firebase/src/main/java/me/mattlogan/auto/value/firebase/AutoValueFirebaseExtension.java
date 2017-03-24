@@ -14,6 +14,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -22,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -29,6 +31,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
+
 import me.mattlogan.auto.value.firebase.adapter.FirebaseAdapter;
 
 import static javax.lang.model.element.Modifier.ABSTRACT;
@@ -90,6 +93,7 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
                                        packageName, autoValueTypeElement, types))
                                      .addMethod(generateFirebaseValueToAutoValueMethod(
                                        packageName, className, types))
+                                     .addMethod(generateToMapMethod(properties))
                                      .addMethods(generateFirebaseValueGetters(packageName, properties))
                                      .build();
 
@@ -463,6 +467,32 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     return methodBuilder.build();
   }
 
+  static MethodSpec generateToMapMethod(Map<String, ExecutableElement> properties) {
+    ParameterizedTypeName mapOfStringToObjectClassName = ParameterizedTypeName.get(MAP, STRING, TypeName.OBJECT);
+    MethodSpec.Builder methodBuilder = MethodSpec.methodBuilder("toMap")
+            .addAnnotation(EXCLUDE)
+            .returns(mapOfStringToObjectClassName);
+
+    Map<String, String> propertyNameForValue = new LinkedHashMap<>(properties.size());
+    for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
+      AnnotationMirror excludeAnnotation = getAnnotationMirror(EXCLUDE, entry.getValue());
+      if (excludeAnnotation == null) {
+        AnnotationMirror propertyNameAnnotation = getAnnotationMirror(PROPERTY_NAME, entry.getValue());
+        AnnotationValue propertyNameValue = propertyNameAnnotation != null ? getAnnotationValue(propertyNameAnnotation, entry.getValue()) : null;
+        String propertyName = propertyNameValue != null ? (String) propertyNameValue.getValue() : entry.getKey();
+        propertyNameForValue.put(entry.getKey(), propertyName);
+      }
+    }
+
+    methodBuilder.addStatement("$T map = new $T<>($L)", ParameterizedTypeName.get(HASH_MAP, STRING, TypeName.OBJECT), HASH_MAP, propertyNameForValue.size());
+    for (Map.Entry<String, String> entry : propertyNameForValue.entrySet()) {
+      methodBuilder.addStatement("map.put($S, this.$N)", entry.getValue(), entry.getKey());
+    }
+    methodBuilder.addStatement("return map");
+    return methodBuilder.build();
+  }
+
+
   static boolean checkIfTypeIsSupported(TypeName type) {
     if (typeIsPrimitive(type)) {
       return true;
@@ -615,5 +645,25 @@ public class AutoValueFirebaseExtension extends AutoValueExtension {
     }
     return returnTypeName;
   }
+
+  private static AnnotationMirror getAnnotationMirror(ClassName annotation, ExecutableElement element) {
+    for (AnnotationMirror elementAnnotation : element.getAnnotationMirrors()) {
+      TypeName annotationType = AnnotationSpec.get(elementAnnotation).type;
+      if (annotation.equals(annotationType)) {
+        return elementAnnotation;
+      }
+    }
+    return null;
+  }
+
+  private static AnnotationValue getAnnotationValue(AnnotationMirror annotationMirror, ExecutableElement element) {
+    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : annotationMirror.getElementValues().entrySet()) {
+      if ("value".equals(entry.getKey().getSimpleName().toString())) {
+        return entry.getValue();
+      }
+    }
+    return null;
+  }
+
 
 }

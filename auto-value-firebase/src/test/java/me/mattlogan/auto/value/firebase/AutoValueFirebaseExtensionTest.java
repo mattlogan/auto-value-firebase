@@ -107,7 +107,11 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
       + "  AutoValue_Ingredient(int spiciness) {\n"
@@ -126,6 +130,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Ingredient toAutoValue() {\n"
       + "      int spiciness = this.spiciness;\n"
       + "      return new AutoValue_Ingredient(spiciness);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"spiciness\", this.spiciness);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public int getSpiciness() {\n"
       + "      return spiciness;\n"
@@ -159,7 +169,11 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import java.lang.Integer;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
       + "  AutoValue_Ingredient(Integer spiciness) {\n"
@@ -178,6 +192,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Ingredient toAutoValue() {\n"
       + "      Integer spiciness = this.spiciness;\n"
       + "      return new AutoValue_Ingredient(spiciness);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"spiciness\", this.spiciness);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public Integer getSpiciness() {\n"
       + "      return spiciness;\n"
@@ -210,8 +230,11 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
       + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Review extends $AutoValue_Review {\n"
       + "  AutoValue_Review(String description) {\n"
@@ -230,6 +253,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Review toAutoValue() {\n"
       + "      String description = this.description;\n"
       + "      return new AutoValue_Review(description);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"description\", this.description);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public String getDescription() {\n"
       + "      return description;\n"
@@ -262,7 +291,11 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
       + "  AutoValue_Taco(Ingredient ingredient) {\n"
@@ -281,6 +314,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Taco toAutoValue() {\n"
       + "      Ingredient ingredient = this.ingredient == null ? null : this.ingredient.toAutoValue();\n"
       + "      return new AutoValue_Taco(ingredient);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredient\", this.ingredient);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public AutoValue_Ingredient.FirebaseValue getIngredient() {\n"
       + "      return ingredient;\n"
@@ -315,8 +354,12 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import java.lang.Integer;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
       + "import java.util.List;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
       + "  AutoValue_Taco(List<Integer> ingredients) {\n"
@@ -335,6 +378,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Taco toAutoValue() {\n"
       + "      List<Integer> ingredients = this.ingredients;\n"
       + "      return new AutoValue_Taco(ingredients);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public List<Integer> getIngredients() {\n"
       + "      return ingredients;\n"
@@ -368,9 +417,12 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
       + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
       + "import java.util.List;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
       + "  AutoValue_Taco(List<String> ingredients) {\n"
@@ -389,6 +441,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Taco toAutoValue() {\n"
       + "      List<String> ingredients = this.ingredients;\n"
       + "      return new AutoValue_Taco(ingredients);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public List<String> getIngredients() {\n"
       + "      return ingredients;\n"
@@ -422,9 +480,13 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
       + "import java.util.ArrayList;\n"
+      + "import java.util.HashMap;\n"
       + "import java.util.List;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
       + "  AutoValue_Taco(List<Ingredient> ingredients) {\n"
@@ -454,6 +516,12 @@ public class AutoValueFirebaseExtensionTest {
       + "        }\n"
       + "      }\n"
       + "      return new AutoValue_Taco(ingredients);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public List<AutoValue_Ingredient.FirebaseValue> getIngredients() {\n"
       + "      return ingredients;\n"
@@ -488,7 +556,10 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import java.lang.Integer;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
       + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
@@ -508,6 +579,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Taco toAutoValue() {\n"
       + "      Map<Integer, Integer> ingredients = this.ingredients;\n"
       + "      return new AutoValue_Taco(ingredients);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public Map<Integer, Integer> getIngredients() {\n"
       + "      return ingredients;\n"
@@ -542,8 +619,10 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import java.lang.Integer;\n"
+      + "import java.lang.Object;\n"
       + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
       + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
@@ -563,6 +642,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Taco toAutoValue() {\n"
       + "      Map<Integer, String> ingredients = this.ingredients;\n"
       + "      return new AutoValue_Taco(ingredients);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public Map<Integer, String> getIngredients() {\n"
       + "      return ingredients;\n"
@@ -596,6 +681,7 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
       + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
       + "import java.util.HashMap;\n"
@@ -629,6 +715,12 @@ public class AutoValueFirebaseExtensionTest {
       + "        }\n"
       + "      }\n"
       + "      return new AutoValue_Taco(ingredients);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public Map<String, AutoValue_Ingredient.FirebaseValue> getIngredients() {\n"
       + "      return ingredients;\n"
@@ -664,10 +756,13 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
       + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
       + "import java.util.ArrayList;\n"
+      + "import java.util.HashMap;\n"
       + "import java.util.List;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Taco extends $AutoValue_Taco {\n"
       + "  AutoValue_Taco(String name, List<Ingredient> ingredients, Review review) {\n"
@@ -703,6 +798,14 @@ public class AutoValueFirebaseExtensionTest {
       + "      }\n"
       + "      Review review = this.review == null ? null : this.review.toAutoValue();\n"
       + "      return new AutoValue_Taco(name, ingredients, review);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(3);\n"
+      + "      map.put(\"name\", this.name);\n"
+      + "      map.put(\"ingredients\", this.ingredients);\n"
+      + "      map.put(\"review\", this.review);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public String getName() {\n"
       + "      return name;\n"
@@ -743,7 +846,11 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n"
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
       + "  AutoValue_Ingredient(int spiciness) {\n"
@@ -762,6 +869,11 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Ingredient toAutoValue() {\n"
       + "      int spiciness = this.spiciness;\n"
       + "      return new AutoValue_Ingredient(spiciness);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(0);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    @Exclude\n"
       + "    public int getSpiciness() {\n"
@@ -798,7 +910,11 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import com.google.firebase.database.PropertyName;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
       + "  AutoValue_Ingredient(int spiciness) {\n"
@@ -817,6 +933,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Ingredient toAutoValue() {\n"
       + "      int spiciness = this.spiciness;\n"
       + "      return new AutoValue_Ingredient(spiciness);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"picante\", this.spiciness);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    @PropertyName(\"picante\")\n"
       + "    public int getSpiciness() {\n"
@@ -852,7 +974,11 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import com.google.firebase.database.IgnoreExtraProperties;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
       + "  AutoValue_Ingredient(int spiciness) {\n"
@@ -872,6 +998,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Ingredient toAutoValue() {\n"
       + "      int spiciness = this.spiciness;\n"
       + "      return new AutoValue_Ingredient(spiciness);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"spiciness\", this.spiciness);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public int getSpiciness() {\n"
       + "      return spiciness;\n"
@@ -906,7 +1038,11 @@ public class AutoValueFirebaseExtensionTest {
       + "\n"
       + "import com.google.firebase.database.Exclude;\n"
       + "import com.google.firebase.database.ThrowOnExtraProperties;\n"
+      + "import java.lang.Object;\n"
+      + "import java.lang.String;\n"
       + "import java.lang.SuppressWarnings;\n"
+      + "import java.util.HashMap;\n"
+      + "import java.util.Map;\n"
       + "\n"
       + "final class AutoValue_Ingredient extends $AutoValue_Ingredient {\n"
       + "  AutoValue_Ingredient(int spiciness) {\n"
@@ -926,6 +1062,12 @@ public class AutoValueFirebaseExtensionTest {
       + "    AutoValue_Ingredient toAutoValue() {\n"
       + "      int spiciness = this.spiciness;\n"
       + "      return new AutoValue_Ingredient(spiciness);\n"
+      + "    }\n"
+      + "    @Exclude\n"
+      + "    Map<String, Object> toMap() {\n"
+      + "      HashMap<String, Object> map = new HashMap<>(1);\n"
+      + "      map.put(\"spiciness\", this.spiciness);\n"
+      + "      return map;\n"
       + "    }\n"
       + "    public int getSpiciness() {\n"
       + "      return spiciness;\n"
@@ -1023,6 +1165,25 @@ public class AutoValueFirebaseExtensionTest {
   }
 
   @Test
+  public void toMapCollision() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
+        "package test;\n"
+            + "\n"
+            + "import com.google.auto.value.AutoValue;\n"
+            + "import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;\n"
+            + "\n"
+            + "@AutoValue @FirebaseValue\n"
+            + "public abstract class Taco {\n"
+            + "  public abstract Object toMap();\n"
+            + "}\n");
+
+    assertAbout(javaSources())
+        .that(Arrays.asList(EXCLUDE, source))
+        .processedWith(new AutoValueProcessor())
+        .failsToCompile();
+  }
+
+  @Test
   public void arrayList() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Taco",
       "package test;\n"
@@ -1094,8 +1255,11 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n" +
         "\n" +
         "import com.google.firebase.database.Exclude;\n" +
+        "import java.lang.Object;\n" +
         "import java.lang.String;\n" +
         "import java.lang.SuppressWarnings;" +
+        "import java.util.HashMap;\n" +
+        "import java.util.Map;\n" +
         "final class AutoValue_Taco extends $AutoValue_Taco {\n" +
         "\n" +
         "  AutoValue_TestTaco(Taco.Status status) {\n" +
@@ -1115,6 +1279,12 @@ public class AutoValueFirebaseExtensionTest {
         "    AutoValue_Taco toAutoValue() {\n" +
         "      Taco.Status status = this.status == null ? null : statusAdapter.fromFirebaseValue(this.status);\n" +
         "      return new AutoValue_Taco(status);\n" +
+        "    }\n" +
+        "    @Exclude\n" +
+        "    Map<String, Object> toMap() {\n" +
+        "      HashMap<String, Object> map = new HashMap<>(1);\n" +
+        "      map.put(\"status\", this.status);\n" +
+        "      return map;\n" +
         "    }\n" +
         "    public String getStatus() {\n" +
         "      return status;\n" +
@@ -1182,8 +1352,11 @@ public class AutoValueFirebaseExtensionTest {
       "package test;\n" +
         "\n" +
         "import com.google.firebase.database.Exclude;\n" +
+        "import java.lang.Object;\n" +
         "import java.lang.String;\n" +
         "import java.lang.SuppressWarnings;" +
+        "import java.util.HashMap;\n" +
+        "import java.util.Map;\n" +
         "final class AutoValue_Taco extends $AutoValue_Taco {\n" +
         "\n" +
         "  AutoValue_TestTaco(Taco.Status status, Taco.Status secondaryStatus) {\n" +
@@ -1206,6 +1379,13 @@ public class AutoValueFirebaseExtensionTest {
         "      Taco.Status status = this.status == null ? null : statusAdapter.fromFirebaseValue(this.status);\n" +
         "      Taco.Status secondaryStatus = this.secondaryStatus == null ? null : statusAdapter.fromFirebaseValue(this.secondaryStatus);\n" +
         "      return new AutoValue_Taco(status, secondaryStatus);\n" +
+        "    }\n" +
+        "    @Exclude\n" +
+        "    Map<String, Object> toMap() {\n" +
+        "      HashMap<String, Object> map = new HashMap<>(2);\n" +
+        "      map.put(\"status\", this.status);\n" +
+        "      map.put(\"secondaryStatus\", this.secondaryStatus);\n" +
+        "      return map;\n" +
         "    }\n" +
         "    public String getStatus() {\n" +
         "      return status;\n" +
