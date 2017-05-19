@@ -3,7 +3,7 @@ package me.mattlogan.auto.value.firebase.example.models;
 import com.google.auto.value.AutoValue;
 import com.google.firebase.database.DataSnapshot;
 import java.util.List;
-
+import java.util.Map;
 import me.mattlogan.auto.value.firebase.adapter.FirebaseAdapter;
 import me.mattlogan.auto.value.firebase.annotation.FirebaseValue;
 
@@ -27,6 +27,10 @@ public abstract class Taco {
   public abstract List<Ingredient> ingredients();
 
   public abstract Review review();
+
+  public Map<String, Object> toMap() {
+    return new AutoValue_Taco.FirebaseValue(this).toMap();
+  }
 
   @FirebaseAdapter(StatusAdapter.class)
   public abstract Status status();
