@@ -30,3 +30,9 @@ Version 1.0.1 *11-18-2016*
 --------------------------
 
 - Add type adapter support
+
+
+Version 1.1.0 *5-19-2017*
+--------------------------
+
+- Add `toMap()` method

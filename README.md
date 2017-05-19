@@ -71,7 +71,18 @@ The `create(DataSnapshot)` and `toFirebaseValue` methods aren't required, but th
 
 ### Collections
 
-If you want to deserialize a collection of objects from a `DataSnapshot`, you can iterate through its children and convert each object from `FirebaseValue` to `AutoValue`. This method could be added to the `Taco` class above.
+The generated `FirebaseValue` class has a `toMap()` method that can be used for `DatabaseReference`'s `updateChildren(Map<String, Object>)` method.
+ 
+For example, you could add the following method to the `Taco` class above:
+ 
+```java
+public Map<String, Object> toMap() {
+  return new AutoValue_Taco.FirebaseValue(this).toMap();
+}
+```
+
+Additionally, if you want to deserialize a collection of objects directly from a `DataSnapshot`, you could just iterate through its children and 
+convert each object from `FirebaseValue` to `AutoValue`. This method could be added to the `Taco` class above.
 
 ```java
 public static Map<String, Taco> createMap(DataSnapshot snapshot) {
@@ -147,11 +158,11 @@ The `@FirebaseValue` annotation is packaged separately, and should be included a
 Type adapter support is optional and can be included as a `compile` dependency.
 
 ```groovy
-apt 'me.mattlogan.auto.value:auto-value-firebase:1.0.1'
-provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:1.0.1'
+apt 'me.mattlogan.auto.value:auto-value-firebase:1.1.0'
+provided 'me.mattlogan.auto.value:auto-value-firebase-annotation:1.1.0'
 
 // Optional type adapter dependency
-compile 'me.mattlogan.auto.value:auto-value-firebase-adapter:1.0.1'
+compile 'me.mattlogan.auto.value:auto-value-firebase-adapter:1.1.0'
 ```
 
 
