@@ -169,7 +169,7 @@ compile 'me.mattlogan.auto.value:auto-value-firebase-adapter:1.1.0'
 License
 -------
 
-    Copyright 2016 Matt Logan
+    Copyright 2017 Matt Logan
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
